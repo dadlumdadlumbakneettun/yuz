@@ -4,361 +4,440 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Yüz Maskesi</title>
-  <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
   <style>
-    body {
-      margin: 0;
-      background-color: #121212;
-      color: #e3e3e3;
-      font-family: system-ui, -apple-system, sans-serif;
-    }
-    canvas {
-      transform: scaleX(-1);
-    }
-    video {
-      display: none !important;
-    }
+/* ── RESET & BASE ───────────────────────────────── */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --sw:290px;
+  --bg-panel:rgba(8,8,16,0.88);
+  --bg-sec:rgba(255,255,255,0.04);
+  --border:rgba(255,255,255,0.08);
+  --txt:#f0f0f5;
+  --muted:#7a7a9a;
+  --accent:#00E5FF;
+  --accent-dim:rgba(0,229,255,0.15);
+  --r8:8px;--r12:12px;
+  --tr:0.32s cubic-bezier(0.4,0,0.2,1);
+  --font:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+}
+html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--txt);font-family:var(--font)}
+#webcam{display:none!important}
+#output_canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transform:scaleX(-1);z-index:0}
+
+/* ── MENU BUTTON ────────────────────────────────── */
+#menu_toggle{
+  position:fixed;top:20px;left:20px;z-index:300;
+  width:44px;height:44px;border-radius:var(--r12);
+  border:1px solid var(--border);background:var(--bg-panel);
+  backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);
+  color:var(--txt);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background var(--tr),box-shadow var(--tr),transform .15s ease;
+  box-shadow:0 4px 24px rgba(0,0,0,0.45);
+}
+#menu_toggle svg{width:20px;height:20px}
+#menu_toggle:hover{background:rgba(0,229,255,0.12);box-shadow:0 0 0 1px var(--accent),0 4px 24px rgba(0,229,255,0.15)}
+#menu_toggle:active{transform:scale(0.94)}
+
+/* ── BACKDROP ───────────────────────────────────── */
+#sidebar_backdrop{
+  position:fixed;inset:0;z-index:150;
+  background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);
+  opacity:0;pointer-events:none;transition:opacity var(--tr);
+}
+#sidebar_backdrop.active{opacity:1;pointer-events:all}
+
+/* ── SIDEBAR ────────────────────────────────────── */
+#sidebar{
+  position:fixed;top:0;left:0;height:100vh;width:var(--sw);z-index:200;
+  background:var(--bg-panel);
+  backdrop-filter:blur(32px) saturate(1.8);-webkit-backdrop-filter:blur(32px) saturate(1.8);
+  border-right:1px solid var(--border);
+  transform:translateX(calc(-1 * var(--sw)));
+  transition:transform var(--tr);
+  display:flex;flex-direction:column;
+  overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.1) transparent;
+}
+#sidebar::-webkit-scrollbar{width:4px}
+#sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+#sidebar.open{transform:translateX(0);box-shadow:4px 0 40px rgba(0,0,0,0.6)}
+
+.sb-header{padding:24px 20px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sb-title{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.sb-sec{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.sb-sec.hidden{display:none!important}
+.sec-lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.sb-footer{padding:16px 20px;margin-top:auto;font-size:11px;color:var(--muted);line-height:1.5}
+
+/* ── SELECT ─────────────────────────────────────── */
+.sel{
+  width:100%;background:var(--bg-sec);border:1px solid var(--border);
+  border-radius:var(--r8);color:var(--txt);font-size:13px;padding:9px 12px;
+  cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237a7a9a' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+  transition:border-color var(--tr);
+}
+.sel:hover,.sel:focus{border-color:var(--accent)}
+
+/* ── UPLOAD ─────────────────────────────────────── */
+.up-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--accent-dim);border:1px solid rgba(0,229,255,0.3);
+  color:var(--accent);font-size:13px;font-weight:500;padding:9px 16px;
+  border-radius:var(--r8);cursor:pointer;
+  transition:background var(--tr),border-color var(--tr);
+}
+.up-btn svg{width:15px;height:15px}
+.up-btn:hover{background:rgba(0,229,255,0.22);border-color:var(--accent)}
+#image_upload{display:none}
+.fn-lbl{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.sl-row{display:flex;align-items:center;gap:10px;margin-top:2px}
+.sl-lbl{font-size:12px;color:var(--muted);flex-shrink:0;width:44px}
+.sl-val{font-size:12px;color:var(--txt);font-variant-numeric:tabular-nums;flex-shrink:0;width:30px}
+.rng{flex:1;-webkit-appearance:none;appearance:none;height:3px;background:rgba(255,255,255,0.1);border-radius:99px;outline:none;cursor:pointer}
+.rng::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 8px rgba(0,229,255,0.5)}
+.rng::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:none;box-shadow:0 0 8px rgba(0,229,255,0.5)}
+
+/* ── TOGGLE ROWS ────────────────────────────────── */
+.trow{display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 0;user-select:none;border-radius:var(--r8)}
+.trow:hover{background:rgba(255,255,255,0.03)}
+.tdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.ttxt{font-size:13px;color:var(--txt);flex:1}
+.tcb{display:none}
+.tsw{
+  position:relative;width:36px;height:20px;
+  background:rgba(255,255,255,0.1);border-radius:99px;flex-shrink:0;
+  transition:background var(--tr);border:1px solid var(--border);
+}
+.tsw::after{
+  content:'';position:absolute;top:2px;left:2px;
+  width:14px;height:14px;border-radius:50%;background:var(--muted);
+  transition:transform var(--tr),background var(--tr);
+}
+.tcb:checked+.tsw{background:var(--accent-dim);border-color:rgba(0,229,255,0.4)}
+.tcb:checked+.tsw::after{transform:translateX(16px);background:var(--accent);box-shadow:0 0 6px rgba(0,229,255,0.6)}
   </style>
 </head>
-<body class="w-screen h-screen flex flex-col items-center justify-center gap-6 p-4">
+<body>
 
-  <div class="flex flex-col items-center justify-center bg-[#1e1e1e] p-6 rounded-2xl shadow-2xl border border-gray-800 gap-4">
-    <div class="relative">
-      <video id="webcam" autoplay playsinline muted class="hidden"></video>
-      <canvas id="output_canvas" class="rounded-lg border border-gray-700"></canvas>
-    </div>
+<video id="webcam" autoplay playsinline muted></video>
+<canvas id="output_canvas"></canvas>
 
-    <div class="flex flex-wrap items-center gap-6 w-full justify-center bg-[#252525] p-4 rounded-xl">
-      <div class="flex items-center gap-2">
-        <label class="text-sm font-medium text-gray-300">Seçenek:</label>
-        <select id="mode_select" class="bg-[#333] text-white text-sm rounded-lg px-3 py-2 border border-gray-600 focus:outline-none focus:border-green-500">
-          <option value="mesh">Sadece Çizgiler</option>
-          <option value="eyes">Göz Maskesi (PNG)</option>
-          <option value="face_mask">Yüz Maskesi (PNG)</option>
-        </select>
-      </div>
+<button id="menu_toggle" aria-label="Menü">
+  <svg id="icon_menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+  <svg id="icon_close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+</button>
 
-      <div id="upload_container" class="hidden items-center gap-4">
-        <div class="flex items-center gap-2">
-          <label for="image_upload" class="cursor-pointer bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors shadow">
-            PNG Yükle
-          </label>
-          <input type="file" id="image_upload" accept="image/png" class="hidden" />
-          <span id="file_name" class="text-xs text-gray-400 max-w-[120px] truncate">Görsel seçilmedi</span>
-        </div>
+<aside id="sidebar">
+  <div class="sb-header"><span class="sb-title">Ayarlar</span></div>
 
-        <div class="flex items-center gap-2">
-          <label class="text-sm font-medium text-gray-300">Boyut:</label>
-          <input type="range" id="scale_slider" min="0.5" max="5.0" step="0.1" value="2.3" class="w-28 accent-green-600" />
-        </div>
-      </div>
+  <div class="sb-sec">
+    <div class="sec-lbl">Maske Modu</div>
+    <select id="mode_select" class="sel">
+      <option value="none">Yok</option>
+      <option value="mesh">Sadece Çizgiler</option>
+      <option value="eyes">Göz Maskesi (PNG)</option>
+      <option value="face_mask">Yüz Maskesi (PNG)</option>
+    </select>
+  </div>
 
-      <div class="flex items-center gap-4 border-l border-gray-700 pl-4">
-        <div class="flex items-center gap-2">
-          <input type="checkbox" id="toggle_blur" class="w-4 h-4 text-orange-600 bg-gray-700 border-gray-600 rounded focus:ring-orange-500" />
-          <label for="toggle_blur" class="text-sm text-gray-300 select-none">Yüzü Bulanıklaştır</label>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <input type="checkbox" id="toggle_mesh" checked class="w-4 h-4 text-green-600 bg-gray-700 border-gray-600 rounded focus:ring-green-500" />
-          <label for="toggle_mesh" class="text-sm text-gray-300 select-none">Yüz Ağını Göster</label>
-        </div>
-
-        <div class="flex items-center gap-2">
-          <input type="checkbox" id="toggle_hands" checked class="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500" />
-          <label for="toggle_hands" class="text-sm text-gray-300 select-none">El Çizgilerini Göster</label>
-        </div>
-      </div>
+  <div id="upload_container" class="sb-sec hidden">
+    <div class="sec-lbl">Görsel</div>
+    <label for="image_upload" class="up-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      PNG Yükle
+    </label>
+    <input type="file" id="image_upload" accept="image/png"/>
+    <span id="file_name" class="fn-lbl">Görsel seçilmedi</span>
+    <div class="sl-row">
+      <span class="sl-lbl">Boyut</span>
+      <input type="range" id="scale_slider" min="0.5" max="5.0" step="0.1" value="2.3" class="rng"/>
+      <span id="scale_value" class="sl-val">2.3×</span>
     </div>
   </div>
 
-  <script>
-    const video = document.getElementById('webcam');
-    const canvas = document.getElementById('output_canvas');
-    const ctx = canvas.getContext('2d');
-    const modeSelect = document.getElementById('mode_select');
-    const uploadContainer = document.getElementById('upload_container');
-    const imageUpload = document.getElementById('image_upload');
-    const fileName = document.getElementById('file_name');
-    const toggleBlur = document.getElementById('toggle_blur');
-    const toggleMesh = document.getElementById('toggle_mesh');
-    const toggleHands = document.getElementById('toggle_hands');
-    const scaleSlider = document.getElementById('scale_slider');
+  <div class="sb-sec">
+    <div class="sec-lbl">Yüz Bölgeleri</div>
+    <label class="trow" for="toggle_lips">   <span class="tdot" style="background:#EF4444;box-shadow:0 0 6px #EF4444"></span><span class="ttxt">Dudaklar</span>  <input type="checkbox" id="toggle_lips"     class="tcb"><span class="tsw"></span></label>
+    <label class="trow" for="toggle_cheeks"> <span class="tdot" style="background:#EAB308;box-shadow:0 0 6px #EAB308"></span><span class="ttxt">Yanaklar</span>  <input type="checkbox" id="toggle_cheeks"   class="tcb"><span class="tsw"></span></label>
+    <label class="trow" for="toggle_eyes">   <span class="tdot" style="background:#22C55E;box-shadow:0 0 6px #22C55E"></span><span class="ttxt">Gözler</span>    <input type="checkbox" id="toggle_eyes"     class="tcb"><span class="tsw"></span></label>
+    <label class="trow" for="toggle_forehead"><span class="tdot" style="background:#3B82F6;box-shadow:0 0 6px #3B82F6"></span><span class="ttxt">Alın</span>      <input type="checkbox" id="toggle_forehead" class="tcb"><span class="tsw"></span></label>
+    <label class="trow" for="toggle_chin">   <span class="tdot" style="background:#F97316;box-shadow:0 0 6px #F97316"></span><span class="ttxt">Çene</span>      <input type="checkbox" id="toggle_chin"     class="tcb"><span class="tsw"></span></label>
+    <label class="trow" for="toggle_neck">   <span class="tdot" style="background:#A855F7;box-shadow:0 0 6px #A855F7"></span><span class="ttxt">Boyun</span>     <input type="checkbox" id="toggle_neck"     class="tcb"><span class="tsw"></span></label>
+    <label class="trow" for="toggle_hands">  <span class="tdot" style="background:#EC4899;box-shadow:0 0 6px #EC4899"></span><span class="ttxt">Eller</span>     <input type="checkbox" id="toggle_hands"    class="tcb"><span class="tsw"></span></label>
+  </div>
 
-    let overlayImage = null;
-    let pngScale = 2.3;
-    let latestFaceLandmarks = null;
-    let latestHandLandmarks = null;
+  <div class="sb-sec">
+    <div class="sec-lbl">Efektler</div>
+    <label class="trow" for="toggle_blur"><span class="tdot" style="background:#F59E0B;box-shadow:0 0 6px #F59E0B"></span><span class="ttxt">Yüzü Bulanıklaştır</span><input type="checkbox" id="toggle_blur" class="tcb"><span class="tsw"></span></label>
+    <label class="trow" for="toggle_neon"><span class="tdot" style="background:#00E5FF;box-shadow:0 0 6px #00E5FF"></span><span class="ttxt">Neon Top (Parmak)</span>  <input type="checkbox" id="toggle_neon" class="tcb" checked><span class="tsw"></span></label>
+  </div>
 
-    let circleX = 320;
-    let circleY = 150;
-    const circleRadius = 25;
+  <div class="sb-footer">Kamera otomatik başlar · Hiçbir veri gönderilmez</div>
+</aside>
 
-    canvas.width = 640;
-    canvas.height = 480;
+<div id="sidebar_backdrop"></div>
 
-  
-    const FACE_OVAL_INDICES = [
-      10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365, 379, 378,
-      400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93, 234, 127, 162, 21,
-      54, 103, 67, 109
-    ];
+<script>
+// ════════════════════════════════════════════════════════════════
+//  LANDMARKS
+// ════════════════════════════════════════════════════════════════
+const FACE_OVAL=[10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
+const LIPS={color:'#EF4444',paths:[
+  [61,146,91,181,84,17,314,405,321,375,291,308,324,318,402,317,14,87,178,88,95,78,61],
+  [78,191,80,81,82,13,312,311,310,415,308],
+  [78,95,88,178,87,14,317,402,318,324,308]
+]};
+const CHEEKS={color:'#EAB308',
+  leftPath: [234,93,132,58,172,136,150,149,176,148,152],
+  rightPath:[454,323,361,288,397,365,379,378,400,377,152]
+};
+const EYES={color:'#22C55E',
+  left: {upper:[33,246,161,160,159,158,157,173,133],lower:[33,7,163,144,145,153,154,155,133],iris:[468,469,470,471,472]},
+  right:{upper:[263,466,388,387,386,385,384,398,362],lower:[263,249,390,373,374,380,381,382,362],iris:[473,474,475,476,477]}
+};
+const FOREHEAD={color:'#3B82F6',
+  browLeft: [70,63,105,66,107,55,65,52,53,46],
+  browRight:[300,293,334,296,336,285,295,282,283,276],
+  topLine:  [10,338,297,332,284,251,389,356,21,54,103,67,109]
+};
+const CHIN={color:'#F97316',path:[172,136,150,149,176,148,152,377,400,378,379,365,397]};
+const NECK={color:'#A855F7'};
+const HAND_COLOR='#EC4899';
+const HAND_CONNECTIONS=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
 
- 
-    const HAND_CONNECTIONS = [
-      [0,1], [1,2], [2,3], [3,4],
-      [0,5], [5,6], [6,7], [7,8],
-      [5,9], [9,10], [10,11], [11,12],
-      [9,13], [13,14], [14,15], [15,16],
-      [13,17], [17,18], [18,19], [19,20], [0,17]
-    ];
+// ════════════════════════════════════════════════════════════════
+//  DRAW HELPERS
+// ════════════════════════════════════════════════════════════════
+function lm(pt,w,h){return[pt.x*w,pt.y*h]}
+function polyline(ctx,lms,idx,w,h,close=false){
+  if(!idx||idx.length<2)return;
+  ctx.beginPath();
+  for(let i=0;i<idx.length;i++){
+    const pt=lms[idx[i]];if(!pt)continue;
+    const[x,y]=lm(pt,w,h);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  if(close)ctx.closePath();
+}
+function glow(ctx,color,lw=1.5,blur=7){
+  ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.shadowColor=color;ctx.shadowBlur=blur;
+}
 
-    modeSelect.addEventListener('change', (e) => {
-      if (e.target.value === 'eyes' || e.target.value === 'face_mask') {
-        uploadContainer.style.display = 'flex';
-        if (e.target.value === 'face_mask') {
-          scaleSlider.value = "1.3";
-          pngScale = 1.3;
-        } else {
-          scaleSlider.value = "2.3";
-          pngScale = 2.3;
-        }
-      } else {
-        uploadContainer.style.display = 'none';
-      }
-    });
+function drawFaceBlur(ctx,lms,video,w,h){
+  ctx.save();ctx.beginPath();
+  for(let i=0;i<FACE_OVAL.length;i++){
+    const pt=lms[FACE_OVAL[i]];if(!pt)continue;
+    const[x,y]=lm(pt,w,h);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.closePath();ctx.clip();
+  ctx.filter='blur(22px)';
+  if(video.readyState>=2)ctx.drawImage(video,0,0,w,h);
+  ctx.restore();
+}
 
-    imageUpload.addEventListener('change', (e) => {
-      const file = e.target.files[0];
-      if (file) {
-        fileName.textContent = file.name;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.onload = () => { overlayImage = img; };
-          img.src = event.target.result;
-        };
-        reader.readAsDataURL(file);
-      }
-    });
+function drawLips(ctx,lms,w,h){
+  ctx.save();glow(ctx,LIPS.color,1.8,9);
+  for(const p of LIPS.paths){polyline(ctx,lms,p,w,h,false);ctx.stroke();}
+  ctx.restore();
+}
 
-    scaleSlider.addEventListener('input', (e) => {
-      pngScale = parseFloat(e.target.value);
-    });
+function drawCheeks(ctx,lms,w,h){
+  ctx.save();glow(ctx,CHEEKS.color,1.5,8);
+  polyline(ctx,lms,CHEEKS.leftPath,w,h,false);ctx.stroke();
+  polyline(ctx,lms,CHEEKS.rightPath,w,h,false);ctx.stroke();
+  ctx.fillStyle=CHEEKS.color+'18';ctx.shadowBlur=0;
+  polyline(ctx,lms,CHEEKS.leftPath,w,h,true);ctx.fill();
+  polyline(ctx,lms,CHEEKS.rightPath,w,h,true);ctx.fill();
+  ctx.restore();
+}
 
-   
-    const holistic = new Holistic({
-      locateFile: (file) => `https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${file}`
-    });
-
-    holistic.setOptions({
-      modelComplexity: 1,
-      smoothLandmarks: true,
-      refineFaceLandmarks: true,
-      minDetectionConfidence: 0.5,
-      minTrackingConfidence: 0.5
-    });
-
-    holistic.onResults((results) => {
-      latestFaceLandmarks = results.faceLandmarks || null;
-    
-      latestHandLandmarks = results.rightHandLandmarks || results.leftHandLandmarks || null;
-    });
-
-    function drawLoop() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      if (video.readyState >= 2) {
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-      }
-
-   
-      if (latestHandLandmarks && latestHandLandmarks.length > 0) {
-        const indexFingerTip = latestHandLandmarks[8]; 
-        if (indexFingerTip) {
-          const targetX = indexFingerTip.x * canvas.width;
-          const targetY = indexFingerTip.y * canvas.height;
-          
-          circleX += (targetX - circleX) * 0.2;
-          circleY += (targetY - circleY) * 0.2;
-        }
-
-        if (toggleHands.checked) {
-       
-          ctx.strokeStyle = '#0026ff';
-          ctx.lineWidth = 3;
-          for (const [a, b] of HAND_CONNECTIONS) {
-            const ptA = latestHandLandmarks[a];
-            const ptB = latestHandLandmarks[b];
-            if (ptA && ptB) {
-              ctx.beginPath();
-              ctx.moveTo(ptA.x * canvas.width, ptA.y * canvas.height);
-              ctx.lineTo(ptB.x * canvas.width, ptB.y * canvas.height);
-              ctx.stroke();
-            }
-          }
-     
-          ctx.fillStyle = '#ff0000';
-          for (const pt of latestHandLandmarks) {
-            ctx.beginPath();
-            ctx.arc(pt.x * canvas.width, pt.y * canvas.height, 3, 0, 2 * Math.PI);
-            ctx.fill();
-          }
-        }
-      }
-
-    
-      if (latestFaceLandmarks) {
-        
-       
-        if (toggleBlur.checked) {
-          ctx.save();
-          ctx.beginPath();
-          for (let i = 0; i < FACE_OVAL_INDICES.length; i++) {
-            const index = FACE_OVAL_INDICES[i];
-            const landmark = latestFaceLandmarks[index];
-            if (landmark) {
-              const x = landmark.x * canvas.width;
-              const y = landmark.y * canvas.height;
-              if (i === 0) ctx.moveTo(x, y);
-              else ctx.lineTo(x, y);
-            }
-          }
-          ctx.closePath();
-          ctx.clip(); 
-
-          ctx.filter = 'blur(25px)'; 
-          if (video.readyState >= 2) {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          }
-          ctx.restore();
-        }
-
-        
-        if (toggleMesh.checked) {
-          ctx.strokeStyle = '#00FF00';
-          ctx.lineWidth = 1;
-          
-         
-          ctx.beginPath();
-          for (let i = 0; i < FACE_OVAL_INDICES.length; i++) {
-            const pt = latestFaceLandmarks[FACE_OVAL_INDICES[i]];
-            if (pt) {
-              if (i === 0) ctx.moveTo(pt.x * canvas.width, pt.y * canvas.height);
-              else ctx.lineTo(pt.x * canvas.width, pt.y * canvas.height);
-            }
-          }
-          ctx.closePath();
-          ctx.stroke();
-
-          
-          const drawPath = (indices) => {
-            ctx.beginPath();
-            for (let i = 0; i < indices.length; i++) {
-              const pt = latestFaceLandmarks[indices[i]];
-              if (pt) {
-                if (i === 0) ctx.moveTo(pt.x * canvas.width, pt.y * canvas.height);
-                else ctx.lineTo(pt.x * canvas.width, pt.y * canvas.height);
-              }
-            }
-            ctx.closePath();
-            ctx.stroke();
-          };
-
-          drawPath([33, 160, 158, 133, 153, 144]); 
-          drawPath([362, 385, 387, 263, 373, 380]); 
-          drawPath([61, 146, 91, 181, 84, 17, 314, 405, 321, 375, 291, 308, 324, 318, 402, 317, 14, 87, 178, 88]); // Dudak Çevresi
-        }
-
-       
-        if (modeSelect.value === 'eyes' && overlayImage) {
-          const leftEyeOuter = latestFaceLandmarks[33];
-          const rightEyeOuter = latestFaceLandmarks[263];
-
-          if (leftEyeOuter && rightEyeOuter) {
-            const x1 = leftEyeOuter.x * canvas.width;
-            const y1 = leftEyeOuter.y * canvas.height;
-            const x2 = rightEyeOuter.x * canvas.width;
-            const y2 = rightEyeOuter.y * canvas.height;
-
-            const cx = (x1 + x2) / 2;
-            const cy = (y1 + y2) / 2;
-            const dist = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-            const angle = Math.atan2(y2 - y1, x2 - x1);
-
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(angle);
-            const imgWidth = dist * pngScale;
-            const imgHeight = imgWidth * (overlayImage.height / overlayImage.width);
-            ctx.drawImage(overlayImage, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
-            ctx.restore();
-          }
-        } 
-        else if (modeSelect.value === 'face_mask' && overlayImage) {
-          const leftCheek = latestFaceLandmarks[234];
-          const rightCheek = latestFaceLandmarks[454];
-          const forehead = latestFaceLandmarks[10];
-          const chin = latestFaceLandmarks[152];
-
-          if (leftCheek && rightCheek && forehead && chin) {
-            const x1 = leftCheek.x * canvas.width;
-            const y1 = leftCheek.y * canvas.height;
-            const x2 = rightCheek.x * canvas.width;
-            const y2 = rightCheek.y * canvas.height;
-
-            const cx = (x1 + x2) / 2;
-            const cy = ((forehead.y + chin.y) / 2) * canvas.height;
-            
-            const dist = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
-            const angle = Math.atan2(y2 - y1, x2 - x1);
-
-            ctx.save();
-            ctx.translate(cx, cy);
-            ctx.rotate(angle);
-            const imgWidth = dist * pngScale;
-            const imgHeight = imgWidth * (overlayImage.height / overlayImage.width);
-            ctx.drawImage(overlayImage, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
-            ctx.restore();
-          }
-        }
-      }
-
-      // 3. HAVADA DURAN NEON DAİRE
-      ctx.save();
-      ctx.beginPath();
-      ctx.arc(circleX, circleY, circleRadius, 0, 2 * Math.PI);
-      ctx.fillStyle = 'rgba(0, 229, 255, 0.4)';
-      ctx.strokeStyle = '#00E5FF';
-      ctx.lineWidth = 4;
-      ctx.shadowColor = '#00E5FF';
-      ctx.shadowBlur = 15;
-      ctx.fill();
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.arc(circleX, circleY, 5, 0, 2 * Math.PI);
-      ctx.fillStyle = '#ffffff';
-      ctx.shadowBlur = 5;
-      ctx.fill();
-      ctx.restore();
-
-      requestAnimationFrame(drawLoop);
+function drawEyes(ctx,lms,w,h){
+  ctx.save();glow(ctx,EYES.color,1.5,10);
+  const drawEye=e=>{
+    polyline(ctx,lms,e.upper,w,h,false);ctx.stroke();
+    polyline(ctx,lms,e.lower,w,h,false);ctx.stroke();
+    if(e.iris&&lms[e.iris[0]]){
+      const pts=e.iris.map(i=>lms[i]);
+      const ax=pts.reduce((s,p)=>s+p.x*w,0)/pts.length;
+      const ay=pts.reduce((s,p)=>s+p.y*h,0)/pts.length;
+      const r=Math.hypot(pts[1].x*w-pts[3].x*w,pts[1].y*h-pts[3].y*h)/2;
+      ctx.beginPath();ctx.arc(ax,ay,r,0,2*Math.PI);ctx.stroke();
     }
+  };
+  drawEye(EYES.left);drawEye(EYES.right);
+  ctx.restore();
+}
 
-    const camera = new Camera(video, {
-      onFrame: async () => {
-        await holistic.send({ image: video });
-      },
-      width: 640,
-      height: 480
-    });
+function drawForehead(ctx,lms,w,h){
+  ctx.save();glow(ctx,FOREHEAD.color,1.5,8);
+  polyline(ctx,lms,FOREHEAD.browLeft,w,h,false);ctx.stroke();
+  polyline(ctx,lms,FOREHEAD.browRight,w,h,false);ctx.stroke();
+  ctx.globalAlpha=0.45;
+  polyline(ctx,lms,FOREHEAD.topLine,w,h,false);ctx.stroke();
+  ctx.restore();
+}
 
-    camera.start();
-    requestAnimationFrame(drawLoop);
-  </script>
+function drawChin(ctx,lms,w,h){
+  ctx.save();glow(ctx,CHIN.color,1.8,8);
+  polyline(ctx,lms,CHIN.path,w,h,false);ctx.stroke();
+  ctx.restore();
+}
 
+function drawNeck(ctx,lms,w,h){
+  const cc=lms[152],lj=lms[172],rj=lms[397];
+  if(!cc||!lj||!rj)return;
+  ctx.save();glow(ctx,NECK.color,1.5,8);
+  const nd=0.12*h;
+  const[lcx,lcy]=lm(cc,w,h);
+  const[llx,lly]=lm(lj,w,h);
+  const[rlx,rly]=lm(rj,w,h);
+  ctx.beginPath();ctx.moveTo(lcx,lcy);ctx.lineTo(lcx,lcy+nd);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(llx,lly);ctx.lineTo(llx-10,lly+nd);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(rlx,rly);ctx.lineTo(rlx+10,rly+nd);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(llx-10,lly+nd);ctx.lineTo(rlx+10,rly+nd);ctx.stroke();
+  ctx.restore();
+}
+
+function drawHands(ctx,hl,w,h){
+  if(!hl)return;
+  ctx.save();glow(ctx,HAND_COLOR,2.5,10);
+  for(const[a,b]of HAND_CONNECTIONS){
+    const A=hl[a],B=hl[b];if(!A||!B)continue;
+    ctx.beginPath();ctx.moveTo(...lm(A,w,h));ctx.lineTo(...lm(B,w,h));ctx.stroke();
+  }
+  ctx.fillStyle=HAND_COLOR;ctx.shadowColor=HAND_COLOR;ctx.shadowBlur=6;
+  for(const pt of hl){const[x,y]=lm(pt,w,h);ctx.beginPath();ctx.arc(x,y,3.5,0,2*Math.PI);ctx.fill();}
+  ctx.restore();
+}
+
+function drawEyeMask(ctx,lms,img,w,h,sc){
+  const L=lms[33],R=lms[263];if(!L||!R||!img)return;
+  const[x1,y1]=lm(L,w,h),[x2,y2]=lm(R,w,h);
+  const cx=(x1+x2)/2,cy=(y1+y2)/2,d=Math.hypot(x2-x1,y2-y1),a=Math.atan2(y2-y1,x2-x1);
+  const iw=d*sc,ih=iw*(img.height/img.width);
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(a);ctx.drawImage(img,-iw/2,-ih/2,iw,ih);ctx.restore();
+}
+
+function drawFaceMask(ctx,lms,img,w,h,sc){
+  const LC=lms[234],RC=lms[454],FH=lms[10],CN=lms[152];if(!LC||!RC||!FH||!CN||!img)return;
+  const[x1,y1]=lm(LC,w,h),[x2,y2]=lm(RC,w,h);
+  const cx=(x1+x2)/2,cy=((FH.y+CN.y)/2)*h,d=Math.hypot(x2-x1,y2-y1),a=Math.atan2(y2-y1,x2-x1);
+  const iw=d*sc,ih=iw*(img.height/img.width);
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(a);ctx.drawImage(img,-iw/2,-ih/2,iw,ih);ctx.restore();
+}
+
+function drawNeonBall(ctx,state,hl,w,h){
+  if(hl&&hl[8]){const t=hl[8];state.x+=(t.x*w-state.x)*0.2;state.y+=(t.y*h-state.y)*0.2;}
+  ctx.save();
+  ctx.beginPath();ctx.arc(state.x,state.y,25,0,2*Math.PI);
+  ctx.fillStyle='rgba(0,229,255,0.35)';ctx.strokeStyle='#00E5FF';ctx.lineWidth=3.5;
+  ctx.shadowColor='#00E5FF';ctx.shadowBlur=18;ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.arc(state.x,state.y,5,0,2*Math.PI);
+  ctx.fillStyle='#fff';ctx.shadowBlur=6;ctx.fill();
+  ctx.restore();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  MAIN
+// ════════════════════════════════════════════════════════════════
+const video   =document.getElementById('webcam');
+const canvas  =document.getElementById('output_canvas');
+const ctx2d   =canvas.getContext('2d');
+const sidebar =document.getElementById('sidebar');
+const backdrop=document.getElementById('sidebar_backdrop');
+const menuBtn =document.getElementById('menu_toggle');
+const iconM   =document.getElementById('icon_menu');
+const iconC   =document.getElementById('icon_close');
+const modeSel =document.getElementById('mode_select');
+const upCont  =document.getElementById('upload_container');
+const imgUp   =document.getElementById('image_upload');
+const fnEl    =document.getElementById('file_name');
+const slider  =document.getElementById('scale_slider');
+const slVal   =document.getElementById('scale_value');
+const cb=id=>document.getElementById(id);
+
+let overlayImg=null,pngScale=2.3;
+let faceLms=null,rHand=null,lHand=null;
+const ball={x:200,y:150};
+
+function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+resizeCanvas();window.addEventListener('resize',resizeCanvas);
+
+// sidebar
+function openSB(){sidebar.classList.add('open');backdrop.classList.add('active');iconM.style.display='none';iconC.style.display='block';}
+function closeSB(){sidebar.classList.remove('open');backdrop.classList.remove('active');iconM.style.display='block';iconC.style.display='none';}
+menuBtn.addEventListener('click',()=>sidebar.classList.contains('open')?closeSB():openSB());
+backdrop.addEventListener('click',closeSB);
+
+modeSel.addEventListener('change',e=>{
+  const v=e.target.value;
+  if(v==='eyes'||v==='face_mask'){
+    upCont.classList.remove('hidden');
+    if(v==='face_mask'){slider.value='1.3';pngScale=1.3;slVal.textContent='1.3×';}
+    else{slider.value='2.3';pngScale=2.3;slVal.textContent='2.3×';}
+  }else{upCont.classList.add('hidden');}
+});
+
+imgUp.addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  fnEl.textContent=f.name;
+  const r=new FileReader();
+  r.onload=ev=>{const i=new Image();i.onload=()=>{overlayImg=i;};i.src=ev.target.result;};
+  r.readAsDataURL(f);
+});
+
+slider.addEventListener('input',e=>{pngScale=parseFloat(e.target.value);slVal.textContent=pngScale.toFixed(1)+'×';});
+
+// mediapipe
+const holistic=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
+holistic.setOptions({modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:true,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+holistic.onResults(r=>{faceLms=r.faceLandmarks||null;rHand=r.rightHandLandmarks||null;lHand=r.leftHandLandmarks||null;});
+
+function loop(){
+  const W=canvas.width,H=canvas.height;
+  ctx2d.clearRect(0,0,W,H);
+  if(video.readyState>=2)ctx2d.drawImage(video,0,0,W,H);
+
+  const activeHand=rHand||lHand;
+
+  if(faceLms){
+    if(cb('toggle_blur').checked)   drawFaceBlur(ctx2d,faceLms,video,W,H);
+    if(cb('toggle_lips').checked)   drawLips(ctx2d,faceLms,W,H);
+    if(cb('toggle_cheeks').checked) drawCheeks(ctx2d,faceLms,W,H);
+    if(cb('toggle_eyes').checked)   drawEyes(ctx2d,faceLms,W,H);
+    if(cb('toggle_forehead').checked)drawForehead(ctx2d,faceLms,W,H);
+    if(cb('toggle_chin').checked)   drawChin(ctx2d,faceLms,W,H);
+    if(cb('toggle_neck').checked)   drawNeck(ctx2d,faceLms,W,H);
+
+    const mode=modeSel.value;
+    if(mode==='eyes'&&overlayImg)     drawEyeMask(ctx2d,faceLms,overlayImg,W,H,pngScale);
+    else if(mode==='face_mask'&&overlayImg)drawFaceMask(ctx2d,faceLms,overlayImg,W,H,pngScale);
+  }
+
+  if(cb('toggle_hands').checked){
+    if(rHand)drawHands(ctx2d,rHand,W,H);
+    if(lHand)drawHands(ctx2d,lHand,W,H);
+  }
+  if(cb('toggle_neon').checked)drawNeonBall(ctx2d,ball,activeHand,W,H);
+
+  requestAnimationFrame(loop);
+}
+
+const camera=new Camera(video,{
+  onFrame:async()=>await holistic.send({image:video}),
+  width:1280,height:720
+});
+camera.start();
+requestAnimationFrame(loop);
+</script>
 </body>
 </html>
