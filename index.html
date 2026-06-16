@@ -1,460 +1,440 @@
 <!DOCTYPE html>
 <html lang="tr">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>Snap Efektleri</title>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
-<style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Yüz Maskesi</title>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
+  <style>
+/* ── RESET & BASE ───────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
-  --bg:#07070f;--panel:rgba(10,10,22,0.92);--border:rgba(255,255,255,0.08);
-  --txt:#f0f0f5;--muted:#6b6b8a;--accent:#00E5FF;
-  --font:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  --sw:290px;
+  --bg-panel:rgba(8,8,16,0.88);
+  --bg-sec:rgba(255,255,255,0.04);
+  --border:rgba(255,255,255,0.08);
+  --txt:#f0f0f5;
+  --muted:#7a7a9a;
+  --accent:#00E5FF;
+  --accent-dim:rgba(0,229,255,0.15);
+  --r8:8px;--r12:12px;
+  --tr:0.32s cubic-bezier(0.4,0,0.2,1);
+  --font:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
 }
-html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);font-family:var(--font)}
+html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--txt);font-family:var(--font)}
 #webcam{display:none!important}
 #output_canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transform:scaleX(-1);z-index:0}
 
-/* ── EFFECT PICKER BAR ── */
-#effect_bar{
-  position:fixed;bottom:0;left:0;right:0;z-index:100;
-  padding:16px 16px 28px;
-  background:linear-gradient(to top,rgba(5,5,15,0.97) 0%,rgba(5,5,15,0.85) 70%,transparent 100%);
-  display:flex;align-items:center;gap:10px;
-  overflow-x:auto;overflow-y:hidden;
-  -webkit-overflow-scrolling:touch;
-  scrollbar-width:none;
+/* ── MENU BUTTON ────────────────────────────────── */
+#menu_toggle{
+  position:fixed;top:20px;left:20px;z-index:300;
+  width:44px;height:44px;border-radius:var(--r12);
+  border:1px solid var(--border);background:var(--bg-panel);
+  backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);
+  color:var(--txt);cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background var(--tr),box-shadow var(--tr),transform .15s ease;
+  box-shadow:0 4px 24px rgba(0,0,0,0.45);
 }
-#effect_bar::-webkit-scrollbar{display:none}
+#menu_toggle svg{width:20px;height:20px}
+#menu_toggle:hover{background:rgba(0,229,255,0.12);box-shadow:0 0 0 1px var(--accent),0 4px 24px rgba(0,229,255,0.15)}
+#menu_toggle:active{transform:scale(0.94)}
 
-.eff-btn{
-  flex:0 0 auto;
-  display:flex;flex-direction:column;align-items:center;gap:5px;
-  cursor:pointer;user-select:none;
-  transition:transform .18s ease;
+/* ── BACKDROP ───────────────────────────────────── */
+#sidebar_backdrop{
+  position:fixed;inset:0;z-index:150;
+  background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);
+  opacity:0;pointer-events:none;transition:opacity var(--tr);
 }
-.eff-btn:active{transform:scale(0.9)}
-.eff-icon{
-  width:64px;height:64px;border-radius:20px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:28px;
-  border:2px solid rgba(255,255,255,0.06);
-  background:rgba(255,255,255,0.07);
-  backdrop-filter:blur(8px);
-  transition:border-color .18s,background .18s,box-shadow .18s;
-}
-.eff-btn.active .eff-icon{
-  border-color:var(--accent);
-  background:rgba(0,229,255,0.15);
-  box-shadow:0 0 20px rgba(0,229,255,0.35),inset 0 0 10px rgba(0,229,255,0.1);
-}
-.eff-lbl{font-size:11px;color:var(--muted);font-weight:500;letter-spacing:.02em;transition:color .18s}
-.eff-btn.active .eff-lbl{color:var(--accent)}
+#sidebar_backdrop.active{opacity:1;pointer-events:all}
 
-/* ── TOP BAR ── */
-#top_bar{
-  position:fixed;top:0;left:0;right:0;z-index:100;
-  padding:16px 20px;
-  display:flex;align-items:center;justify-content:space-between;
-  pointer-events:none;
+/* ── SIDEBAR ────────────────────────────────────── */
+#sidebar{
+  position:fixed;top:0;left:0;height:100vh;width:var(--sw);z-index:200;
+  background:var(--bg-panel);
+  backdrop-filter:blur(32px) saturate(1.8);-webkit-backdrop-filter:blur(32px) saturate(1.8);
+  border-right:1px solid var(--border);
+  transform:translateX(calc(-1 * var(--sw)));
+  transition:transform var(--tr);
+  display:flex;flex-direction:column;
+  overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.1) transparent;
 }
-#effect_name_badge{
-  padding:7px 16px;border-radius:99px;font-size:13px;font-weight:600;
-  background:rgba(10,10,22,0.85);border:1px solid rgba(255,255,255,0.1);
-  backdrop-filter:blur(16px);color:var(--txt);
-  transition:opacity .3s;letter-spacing:.02em;
-  pointer-events:none;
+#sidebar::-webkit-scrollbar{width:4px}
+#sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+#sidebar.open{transform:translateX(0);box-shadow:4px 0 40px rgba(0,0,0,0.6)}
+
+.sb-header{padding:24px 20px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sb-title{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+.sb-sec{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
+.sb-sec.hidden{display:none!important}
+.sec-lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.sb-footer{padding:16px 20px;margin-top:auto;font-size:11px;color:var(--muted);line-height:1.5}
+
+/* ── SELECT ─────────────────────────────────────── */
+.sel{
+  width:100%;background:var(--bg-sec);border:1px solid var(--border);
+  border-radius:var(--r8);color:var(--txt);font-size:13px;padding:9px 12px;
+  cursor:pointer;outline:none;appearance:none;-webkit-appearance:none;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath fill='%237a7a9a' d='M6 8L0 0h12z'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 12px center;
+  transition:border-color var(--tr);
 }
-</style>
+.sel:hover,.sel:focus{border-color:var(--accent)}
+
+/* ── UPLOAD ─────────────────────────────────────── */
+.up-btn{
+  display:inline-flex;align-items:center;gap:8px;
+  background:var(--accent-dim);border:1px solid rgba(0,229,255,0.3);
+  color:var(--accent);font-size:13px;font-weight:500;padding:9px 16px;
+  border-radius:var(--r8);cursor:pointer;
+  transition:background var(--tr),border-color var(--tr);
+}
+.up-btn svg{width:15px;height:15px}
+.up-btn:hover{background:rgba(0,229,255,0.22);border-color:var(--accent)}
+#image_upload{display:none}
+.fn-lbl{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:220px}
+.sl-row{display:flex;align-items:center;gap:10px;margin-top:2px}
+.sl-lbl{font-size:12px;color:var(--muted);flex-shrink:0;width:44px}
+.sl-val{font-size:12px;color:var(--txt);font-variant-numeric:tabular-nums;flex-shrink:0;width:30px}
+.rng{flex:1;-webkit-appearance:none;appearance:none;height:3px;background:rgba(255,255,255,0.1);border-radius:99px;outline:none;cursor:pointer}
+.rng::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 8px rgba(0,229,255,0.5)}
+.rng::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:none;box-shadow:0 0 8px rgba(0,229,255,0.5)}
+
+/* ── TOGGLE ROWS ────────────────────────────────── */
+.trow{display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 0;user-select:none;border-radius:var(--r8)}
+.trow:hover{background:rgba(255,255,255,0.03)}
+.tdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.ttxt{font-size:13px;color:var(--txt);flex:1}
+.tcb{display:none}
+.tsw{
+  position:relative;width:36px;height:20px;
+  background:rgba(255,255,255,0.1);border-radius:99px;flex-shrink:0;
+  transition:background var(--tr);border:1px solid var(--border);
+}
+.tsw::after{
+  content:'';position:absolute;top:2px;left:2px;
+  width:14px;height:14px;border-radius:50%;background:var(--muted);
+  transition:transform var(--tr),background var(--tr);
+}
+.tcb:checked+.tsw{background:var(--accent-dim);border-color:rgba(0,229,255,0.4)}
+.tcb:checked+.tsw::after{transform:translateX(16px);background:var(--accent);box-shadow:0 0 6px rgba(0,229,255,0.6)}
+  </style>
 </head>
 <body>
+
 <video id="webcam" autoplay playsinline muted></video>
 <canvas id="output_canvas"></canvas>
 
-<div id="top_bar">
-  <div id="effect_name_badge">😴 Efekt Yok</div>
-</div>
+<button id="menu_toggle" aria-label="Menü">
+  <svg id="icon_menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+  <svg id="icon_close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none">
+    <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+  </svg>
+</button>
 
-<div id="effect_bar">
-  <div class="eff-btn active" data-effect="none">
-    <div class="eff-icon">😴</div>
-    <div class="eff-lbl">Yok</div>
+<aside id="sidebar">
+  <div class="sb-header"><span class="sb-title">Ayarlar</span></div>
+
+  <div class="sb-sec">
+    <div class="sec-lbl">Maske Modu</div>
+    <select id="mode_select" class="sel">
+      <option value="none">Yok</option>
+      <option value="mesh">Sadece Çizgiler</option>
+      <option value="eyes">Göz Maskesi (PNG)</option>
+      <option value="face_mask">Yüz Maskesi (PNG)</option>
+    </select>
   </div>
-  <div class="eff-btn" data-effect="fat_face">
-    <div class="eff-icon">🐡</div>
-    <div class="eff-lbl">Şişman Yüz</div>
+
+  <div id="upload_container" class="sb-sec hidden">
+    <div class="sec-lbl">Görsel</div>
+    <label for="image_upload" class="up-btn">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      PNG Yükle
+    </label>
+    <input type="file" id="image_upload" accept="image/png"/>
+    <span id="file_name" class="fn-lbl">Görsel seçilmedi</span>
+    <div class="sl-row">
+      <span class="sl-lbl">Boyut</span>
+      <input type="range" id="scale_slider" min="0.5" max="5.0" step="0.1" value="2.3" class="rng"/>
+      <span id="scale_value" class="sl-val">2.3×</span>
+    </div>
   </div>
-  <div class="eff-btn" data-effect="big_eyes">
-    <div class="eff-icon">👀</div>
-    <div class="eff-lbl">Dev Gözler</div>
+
+  <div class="sb-sec">
+    <div class="sec-lbl">Yüz Bölgeleri</div>
+    <label class="trow" for="toggle_lips">   <span class="tdot" style="background:#EF4444;box-shadow:0 0 6px #EF4444"></span><span class="ttxt">Dudaklar</span>  <input type="checkbox" id="toggle_lips"     class="tcb"><span class="tsw"></span></label>
+    <label class="trow" for="toggle_cheeks"> <span class="tdot" style="background:#EAB308;box-shadow:0 0 6px #EAB308"></span><span class="ttxt">Yanaklar</span>  <input type="checkbox" id="toggle_cheeks"   class="tcb"><span class="tsw"></span></label>
+    <label class="trow" for="toggle_eyes">   <span class="tdot" style="background:#22C55E;box-shadow:0 0 6px #22C55E"></span><span class="ttxt">Gözler</span>    <input type="checkbox" id="toggle_eyes"     class="tcb"><span class="tsw"></span></label>
+    <label class="trow" for="toggle_forehead"><span class="tdot" style="background:#3B82F6;box-shadow:0 0 6px #3B82F6"></span><span class="ttxt">Alın</span>      <input type="checkbox" id="toggle_forehead" class="tcb"><span class="tsw"></span></label>
+    <label class="trow" for="toggle_chin">   <span class="tdot" style="background:#F97316;box-shadow:0 0 6px #F97316"></span><span class="ttxt">Çene</span>      <input type="checkbox" id="toggle_chin"     class="tcb"><span class="tsw"></span></label>
+    <label class="trow" for="toggle_neck">   <span class="tdot" style="background:#A855F7;box-shadow:0 0 6px #A855F7"></span><span class="ttxt">Boyun</span>     <input type="checkbox" id="toggle_neck"     class="tcb"><span class="tsw"></span></label>
+    <label class="trow" for="toggle_hands">  <span class="tdot" style="background:#EC4899;box-shadow:0 0 6px #EC4899"></span><span class="ttxt">Eller</span>     <input type="checkbox" id="toggle_hands"    class="tcb"><span class="tsw"></span></label>
   </div>
-  <div class="eff-btn" data-effect="tiny_face">
-    <div class="eff-icon">🔬</div>
-    <div class="eff-lbl">Küçük Yüz</div>
+
+  <div class="sb-sec">
+    <div class="sec-lbl">Efektler</div>
+    <label class="trow" for="toggle_blur"><span class="tdot" style="background:#F59E0B;box-shadow:0 0 6px #F59E0B"></span><span class="ttxt">Yüzü Bulanıklaştır</span><input type="checkbox" id="toggle_blur" class="tcb"><span class="tsw"></span></label>
+    <label class="trow" for="toggle_neon"><span class="tdot" style="background:#00E5FF;box-shadow:0 0 6px #00E5FF"></span><span class="ttxt">Neon Top (Parmak)</span>  <input type="checkbox" id="toggle_neon" class="tcb" checked><span class="tsw"></span></label>
   </div>
-  <div class="eff-btn" data-effect="big_nose">
-    <div class="eff-icon">🤡</div>
-    <div class="eff-lbl">Kocaman Burun</div>
-  </div>
-  <div class="eff-btn" data-effect="long_face">
-    <div class="eff-icon">🦒</div>
-    <div class="eff-lbl">Uzun Yüz</div>
-  </div>
-  <div class="eff-btn" data-effect="alien">
-    <div class="eff-icon">👽</div>
-    <div class="eff-lbl">Uzaylı</div>
-  </div>
-  <div class="eff-btn" data-effect="mirror_eyes">
-    <div class="eff-icon">🔮</div>
-    <div class="eff-lbl">Ayna Göz</div>
-  </div>
-  <div class="eff-btn" data-effect="potato">
-    <div class="eff-icon">🥔</div>
-    <div class="eff-lbl">Patates</div>
-  </div>
-  <div class="eff-btn" data-effect="shaky">
-    <div class="eff-icon">🫨</div>
-    <div class="eff-lbl">Titreme</div>
-  </div>
-</div>
+
+  <div class="sb-footer">Kamera otomatik başlar · Hiçbir veri gönderilmez</div>
+</aside>
+
+<div id="sidebar_backdrop"></div>
 
 <script>
-// ══════════════════════════════════════════════════
-//  CORE SETUP
-// ══════════════════════════════════════════════════
-const video   = document.getElementById('webcam');
-const canvas  = document.getElementById('output_canvas');
-const ctx     = canvas.getContext('2d', {willReadFrequently:true});
-
-let faceLms = null;
-let currentEffect = 'none';
-let effectAlpha   = 0; // smooth transition 0→1
-let time = 0;
-
-const EFFECTS = {
-  none:       { label:'😴 Efekt Yok' },
-  fat_face:   { label:'🐡 Şişman Yüz' },
-  big_eyes:   { label:'👀 Dev Gözler' },
-  tiny_face:  { label:'🔬 Küçük Yüz' },
-  big_nose:   { label:'🤡 Kocaman Burun' },
-  long_face:  { label:'🦒 Uzun Yüz' },
-  alien:      { label:'👽 Uzaylı' },
-  mirror_eyes:{ label:'🔮 Ayna Göz' },
-  potato:     { label:'🥔 Patates Yüz' },
-  shaky:      { label:'🫨 Titreme' },
+// ════════════════════════════════════════════════════════════════
+//  LANDMARKS
+// ════════════════════════════════════════════════════════════════
+const FACE_OVAL=[10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
+const LIPS={color:'#EF4444',paths:[
+  [61,146,91,181,84,17,314,405,321,375,291,308,324,318,402,317,14,87,178,88,95,78,61],
+  [78,191,80,81,82,13,312,311,310,415,308],
+  [78,95,88,178,87,14,317,402,318,324,308]
+]};
+const CHEEKS={color:'#EAB308',
+  leftPath: [234,93,132,58,172,136,150,149,176,148,152],
+  rightPath:[454,323,361,288,397,365,379,378,400,377,152]
 };
+const EYES={color:'#22C55E',
+  left: {upper:[33,246,161,160,159,158,157,173,133],lower:[33,7,163,144,145,153,154,155,133],iris:[468,469,470,471,472]},
+  right:{upper:[263,466,388,387,386,385,384,398,362],lower:[263,249,390,373,374,380,381,382,362],iris:[473,474,475,476,477]}
+};
+const FOREHEAD={color:'#3B82F6',
+  browLeft: [70,63,105,66,107,55,65,52,53,46],
+  browRight:[300,293,334,296,336,285,295,282,283,276],
+  topLine:  [10,338,297,332,284,251,389,356,21,54,103,67,109]
+};
+const CHIN={color:'#F97316',path:[172,136,150,149,176,148,152,377,400,378,379,365,397]};
+const NECK={color:'#A855F7'};
+const HAND_COLOR='#EC4899';
+const HAND_CONNECTIONS=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
 
-function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight}
-resizeCanvas();window.addEventListener('resize',resizeCanvas);
-
-// Effect picker
-document.querySelectorAll('.eff-btn').forEach(btn=>{
-  btn.addEventListener('click',()=>{
-    document.querySelectorAll('.eff-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    currentEffect = btn.dataset.effect;
-    effectAlpha   = 0;
-    document.getElementById('effect_name_badge').textContent = EFFECTS[currentEffect].label;
-  });
-});
-
-// ══════════════════════════════════════════════════
-//  LANDMARK HELPERS
-// ══════════════════════════════════════════════════
-function lmPx(lms, i, W, H){ return [lms[i].x*W, lms[i].y*H] }
-
-// Face bounding box
-function faceBBox(lms, W, H){
-  let minX=W,minY=H,maxX=0,maxY=0;
-  for(const p of lms){
-    if(p.x*W<minX)minX=p.x*W; if(p.x*W>maxX)maxX=p.x*W;
-    if(p.y*H<minY)minY=p.y*H; if(p.y*H>maxY)maxY=p.y*H;
+// ════════════════════════════════════════════════════════════════
+//  DRAW HELPERS
+// ════════════════════════════════════════════════════════════════
+function lm(pt,w,h){return[pt.x*w,pt.y*h]}
+function polyline(ctx,lms,idx,w,h,close=false){
+  if(!idx||idx.length<2)return;
+  ctx.beginPath();
+  for(let i=0;i<idx.length;i++){
+    const pt=lms[idx[i]];if(!pt)continue;
+    const[x,y]=lm(pt,w,h);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
   }
-  return {x:minX,y:minY,w:maxX-minX,h:maxY-minY,cx:(minX+maxX)/2,cy:(minY+maxY)/2};
+  if(close)ctx.closePath();
+}
+function glow(ctx,color,lw=1.5,blur=7){
+  ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.shadowColor=color;ctx.shadowBlur=blur;
 }
 
-// ══════════════════════════════════════════════════
-//  WARP ENGINE  (offscreen pixel displacement)
-// ══════════════════════════════════════════════════
-const offCanvas = document.createElement('canvas');
-const offCtx    = offCanvas.getContext('2d',{willReadFrequently:true});
-
-// Single radial push/pull warp
-// cx,cy = center of warp, radius = effect radius
-// strength > 0 = push out (fatten), < 0 = suck in (shrink)
-function warpRegion(imageData, W, H, cx, cy, radius, strength){
-  const src = imageData;
-  const dst = new Uint8ClampedArray(src.data);
-  const r2  = radius*radius;
-
-  for(let y=Math.max(0,cy-radius|0); y<Math.min(H,cy+radius|0); y++){
-    for(let x=Math.max(0,cx-radius|0); x<Math.min(W,cx+radius|0); x++){
-      const dx=x-cx, dy=y-cy;
-      const d2=dx*dx+dy*dy;
-      if(d2>=r2)continue;
-      const d=Math.sqrt(d2);
-      const t=(1-d/radius);
-      const push=t*t*strength;
-      let sx=x-dx*push, sy=y-dy*push;
-      sx=Math.max(0,Math.min(W-1,sx|0));
-      sy=Math.max(0,Math.min(H-1,sy|0));
-      const si=(sy*W+sx)*4, di=(y*W+x)*4;
-      dst[di]=src.data[si]; dst[di+1]=src.data[si+1];
-      dst[di+2]=src.data[si+2]; dst[di+3]=src.data[si+3];
-    }
+function drawFaceBlur(ctx,lms,video,w,h){
+  ctx.save();ctx.beginPath();
+  for(let i=0;i<FACE_OVAL.length;i++){
+    const pt=lms[FACE_OVAL[i]];if(!pt)continue;
+    const[x,y]=lm(pt,w,h);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
   }
-  return new ImageData(dst,W,H);
-}
-
-// Scale a region (for tiny/big face)
-function scaleRegion(imageData, W, H, cx, cy, radius, scale){
-  const src=imageData;
-  const dst=new Uint8ClampedArray(src.data);
-  const r2=radius*radius;
-  for(let y=Math.max(0,(cy-radius)|0);y<Math.min(H,(cy+radius)|0);y++){
-    for(let x=Math.max(0,(cx-radius)|0);x<Math.min(W,(cx+radius)|0);x++){
-      const dx=x-cx,dy=y-cy;
-      const d2=dx*dx+dy*dy;
-      if(d2>=r2)continue;
-      const d=Math.sqrt(d2);
-      const t=(1-d/radius);
-      const s=1+(scale-1)*t*t;
-      let sx=cx+(dx/s), sy=cy+(dy/s);
-      sx=Math.max(0,Math.min(W-1,sx|0));
-      sy=Math.max(0,Math.min(H-1,sy|0));
-      const si=(sy*W+sx)*4, di=(y*W+x)*4;
-      dst[di]=src.data[si]; dst[di+1]=src.data[si+1];
-      dst[di+2]=src.data[si+2]; dst[di+3]=src.data[si+3];
-    }
-  }
-  return new ImageData(dst,W,H);
-}
-
-// ══════════════════════════════════════════════════
-//  EFFECT RENDERERS
-// ══════════════════════════════════════════════════
-function applyEffect(W, H, lms, effect, alpha, t){
-  // Draw base video into offscreen
-  offCanvas.width=W; offCanvas.height=H;
-  offCtx.save();
-  offCtx.scale(-1,1); offCtx.drawImage(video,-W,0,W,H);
-  offCtx.restore();
-
-  if(effect==='none' || !lms){
-    ctx.save(); ctx.scale(-1,1); ctx.drawImage(offCanvas,-W,0,W,H); ctx.restore();
-    return;
-  }
-
-  const bb  = faceBBox(lms,W,H);
-  const fcx = bb.cx, fcy = bb.cy;
-  const frad= bb.w*0.6; // face radius
-
-  // Mirror: landmark x is flipped vs canvas (canvas is scaleX(-1) via CSS)
-  // But we draw without CSS flip here, so landmarks need mirroring
-  const mx = x => W - x; // mirror x for our offscreen draw
-
-  // Key points (mirrored)
-  const noseTip    = [mx(lms[1].x*W),   lms[1].y*H];
-  const leftEye    = [mx((lms[33].x+lms[133].x)/2*W),  (lms[33].y+lms[133].y)/2*H];
-  const rightEye   = [mx((lms[362].x+lms[263].x)/2*W), (lms[362].y+lms[263].y)/2*H];
-  const eyeRadius  = Math.hypot(lms[133].x*W-lms[33].x*W, lms[133].y*H-lms[33].y*H)*1.6;
-  const mouthCx    = mx((lms[61].x+lms[291].x)/2*W);
-  const mouthCy    = (lms[61].y+lms[291].y)/2*H;
-  const mfcx       = mx(fcx); // mirrored face center x
-
-  let imgData = offCtx.getImageData(0,0,W,H);
-
-  if(effect==='fat_face'){
-    // Push face outward from center — big radial push
-    const str = 0.55*alpha;
-    imgData = warpRegion(imgData,W,H, mfcx, fcy, frad*1.4, str);
-  }
-
-  else if(effect==='big_eyes'){
-    const str = 1.9*alpha;
-    imgData = scaleRegion(imgData,W,H, leftEye[0], leftEye[1], eyeRadius*2.2, 1+str);
-    imgData = scaleRegion(imgData,W,H, rightEye[0],rightEye[1],eyeRadius*2.2, 1+str);
-  }
-
-  else if(effect==='tiny_face'){
-    // Shrink the inner face region
-    const str = 0.42*alpha;
-    imgData = scaleRegion(imgData,W,H, mfcx, fcy, frad*0.85, 1-str);
-  }
-
-  else if(effect==='big_nose'){
-    const nrad  = frad*0.38;
-    const str   = 2.2*alpha;
-    imgData = scaleRegion(imgData,W,H, noseTip[0], noseTip[1], nrad, 1+str);
-  }
-
-  else if(effect==='long_face'){
-    // Stretch face vertically — push top up and chin down
-    const chin   = [mx(lms[152].x*W), lms[152].y*H];
-    const forehead=[mx(lms[10].x*W),  lms[10].y*H];
-    const dy     = frad*0.6*alpha;
-
-    const dst2   = new Uint8ClampedArray(imgData.data);
-    const topY   = forehead[1], botY = chin[1];
-    const faceH  = botY - topY;
-
-    for(let y=0;y<H;y++){
-      for(let x=0;x<W;x++){
-        const dx2 = x - mfcx;
-        const ddist2 = dx2*dx2;
-        const xrad2  = (frad*1.1)*(frad*1.1);
-        if(ddist2>xrad2){continue;}
-
-        let sy=y;
-        const relY=(y-topY)/faceH; // 0=top,1=bottom
-        const blend=Math.max(0,Math.min(1, 1-Math.abs(2*relY-1)));
-
-        if(y<topY){sy=y+dy*blend*0.5;}
-        else if(y>botY){sy=y-dy*blend*0.5;}
-        else{
-          const stretch = (relY-0.5)*2; // -1..1
-          sy = y - stretch*dy*blend;
-        }
-
-        sy=Math.max(0,Math.min(H-1,sy|0));
-        const si=(sy*W+x)*4, di=(y*W+x)*4;
-        dst2[di]=imgData.data[si]; dst2[di+1]=imgData.data[si+1];
-        dst2[di+2]=imgData.data[si+2]; dst2[di+3]=imgData.data[si+3];
-      }
-    }
-    imgData = new ImageData(dst2,W,H);
-  }
-
-  else if(effect==='alien'){
-    // Huge forehead + tiny chin
-    const forehead=[mx(lms[10].x*W),  lms[10].y*H];
-    const chin    =[mx(lms[152].x*W), lms[152].y*H];
-    imgData = scaleRegion(imgData,W,H, forehead[0],forehead[1], frad*1.1, 1+1.3*alpha);
-    imgData = scaleRegion(imgData,W,H, chin[0],    chin[1],     frad*0.5, 1-0.35*alpha);
-    // Also big eyes
-    imgData = scaleRegion(imgData,W,H, leftEye[0], leftEye[1],  eyeRadius*2, 1+0.8*alpha);
-    imgData = scaleRegion(imgData,W,H, rightEye[0],rightEye[1], eyeRadius*2, 1+0.8*alpha);
-  }
-
-  else if(effect==='mirror_eyes'){
-    // Copy right eye region to left and vice versa
-    const eRad = eyeRadius*1.4;
-    const dst2  = new Uint8ClampedArray(imgData.data);
-
-    // Sample right eye, paste to left (mirrored)
-    for(let dy2=-eRad; dy2<eRad; dy2++){
-      for(let dx2=-eRad; dx2<eRad; dx2++){
-        if(dx2*dx2+dy2*dy2>eRad*eRad)continue;
-        // Source: right eye
-        const sx = Math.max(0,Math.min(W-1,(rightEye[0]+dx2)|0));
-        const sy = Math.max(0,Math.min(H-1,(rightEye[1]+dy2)|0));
-        // Dest: left eye (flipped x)
-        const dx3 = Math.max(0,Math.min(W-1,(leftEye[0]-dx2)|0));
-        const dy3 = Math.max(0,Math.min(H-1,(leftEye[1]+dy2)|0));
-        const si=(sy*W+sx)*4, di=(dy3*W+dx3)*4;
-        // blend with alpha
-        dst2[di]  =dst2[di]  *(1-alpha)+imgData.data[si]  *alpha;
-        dst2[di+1]=dst2[di+1]*(1-alpha)+imgData.data[si+1]*alpha;
-        dst2[di+2]=dst2[di+2]*(1-alpha)+imgData.data[si+2]*alpha;
-        dst2[di+3]=255;
-      }
-    }
-    imgData = new ImageData(dst2,W,H);
-  }
-
-  else if(effect==='potato'){
-    // Squash face horizontally + fatten
-    const str  = 0.38*alpha;
-    const dst2 = new Uint8ClampedArray(imgData.data);
-    const topY = (lms[10].y*H)|0;
-    const botY = (lms[152].y*H)|0;
-
-    for(let y=topY; y<botY; y++){
-      for(let x=0; x<W; x++){
-        const relX = (x-mfcx)/frad;
-        const relY = (y-fcy)/frad;
-        // horizontal squash
-        let sx = mfcx + (x-mfcx)*(1+str*0.6);
-        // slight vertical squash
-        let sy = fcy  + (y-fcy)  *(1-str*0.3);
-        sx=Math.max(0,Math.min(W-1,sx|0));
-        sy=Math.max(0,Math.min(H-1,sy|0));
-        const si=(sy*W+sx)*4, di=(y*W+x)*4;
-        dst2[di]=imgData.data[si]; dst2[di+1]=imgData.data[si+1];
-        dst2[di+2]=imgData.data[si+2]; dst2[di+3]=imgData.data[si+3];
-      }
-    }
-    // Also fatten
-    imgData = new ImageData(dst2,W,H);
-    imgData = warpRegion(imgData,W,H, mfcx, fcy, frad*1.2, 0.35*alpha);
-  }
-
-  else if(effect==='shaky'){
-    // Jitter/wave distortion
-    const dst2 = new Uint8ClampedArray(imgData.data.length);
-    const amp  = 8*alpha;
-    const freq = 0.04;
-    for(let y=0;y<H;y++){
-      for(let x=0;x<W;x++){
-        const dx2 = x-mfcx, dy2=y-fcy;
-        const dist=Math.sqrt(dx2*dx2+dy2*dy2);
-        const inFace = dist < frad*1.2;
-        let sx=x, sy=y;
-        if(inFace){
-          const blend=Math.max(0,1-dist/(frad*1.2));
-          sx = x + Math.sin(y*freq + t*8)*amp*blend;
-          sy = y + Math.cos(x*freq + t*6)*amp*blend;
-        }
-        sx=Math.max(0,Math.min(W-1,sx|0));
-        sy=Math.max(0,Math.min(H-1,sy|0));
-        const si=(sy*W+sx)*4, di=(y*W+x)*4;
-        dst2[di]=imgData.data[si]; dst2[di+1]=imgData.data[si+1];
-        dst2[di+2]=imgData.data[si+2]; dst2[di+3]=imgData.data[si+3];
-      }
-    }
-    imgData = new ImageData(dst2,W,H);
-  }
-
-  offCtx.putImageData(imgData,0,0);
-
-  // Draw offscreen (already un-mirrored) → canvas (which CSS mirrors back)
-  ctx.save();
-  ctx.scale(-1,1);
-  ctx.drawImage(offCanvas,-W,0,W,H);
+  ctx.closePath();ctx.clip();
+  ctx.filter='blur(22px)';
+  if(video.readyState>=2)ctx.drawImage(video,0,0,w,h);
   ctx.restore();
 }
 
-// ══════════════════════════════════════════════════
-//  MAIN LOOP
-// ══════════════════════════════════════════════════
-function loop(){
-  const W=canvas.width, H=canvas.height;
-  ctx.clearRect(0,0,W,H);
-  time += 0.016;
+function drawLips(ctx,lms,w,h){
+  ctx.save();glow(ctx,LIPS.color,1.8,9);
+  for(const p of LIPS.paths){polyline(ctx,lms,p,w,h,false);ctx.stroke();}
+  ctx.restore();
+}
 
-  // Smooth transition
-  const targetAlpha = (currentEffect!=='none') ? 1 : 0;
-  effectAlpha += (targetAlpha - effectAlpha) * 0.12;
+function drawCheeks(ctx,lms,w,h){
+  ctx.save();glow(ctx,CHEEKS.color,1.5,8);
+  polyline(ctx,lms,CHEEKS.leftPath,w,h,false);ctx.stroke();
+  polyline(ctx,lms,CHEEKS.rightPath,w,h,false);ctx.stroke();
+  ctx.fillStyle=CHEEKS.color+'18';ctx.shadowBlur=0;
+  polyline(ctx,lms,CHEEKS.leftPath,w,h,true);ctx.fill();
+  polyline(ctx,lms,CHEEKS.rightPath,w,h,true);ctx.fill();
+  ctx.restore();
+}
 
-  if(video.readyState >= 2){
-    applyEffect(W, H, faceLms, currentEffect, Math.min(1,effectAlpha), time);
+function drawEyes(ctx,lms,w,h){
+  ctx.save();glow(ctx,EYES.color,1.5,10);
+  const drawEye=e=>{
+    polyline(ctx,lms,e.upper,w,h,false);ctx.stroke();
+    polyline(ctx,lms,e.lower,w,h,false);ctx.stroke();
+    if(e.iris&&lms[e.iris[0]]){
+      const pts=e.iris.map(i=>lms[i]);
+      const ax=pts.reduce((s,p)=>s+p.x*w,0)/pts.length;
+      const ay=pts.reduce((s,p)=>s+p.y*h,0)/pts.length;
+      const r=Math.hypot(pts[1].x*w-pts[3].x*w,pts[1].y*h-pts[3].y*h)/2;
+      ctx.beginPath();ctx.arc(ax,ay,r,0,2*Math.PI);ctx.stroke();
+    }
+  };
+  drawEye(EYES.left);drawEye(EYES.right);
+  ctx.restore();
+}
+
+function drawForehead(ctx,lms,w,h){
+  ctx.save();glow(ctx,FOREHEAD.color,1.5,8);
+  polyline(ctx,lms,FOREHEAD.browLeft,w,h,false);ctx.stroke();
+  polyline(ctx,lms,FOREHEAD.browRight,w,h,false);ctx.stroke();
+  ctx.globalAlpha=0.45;
+  polyline(ctx,lms,FOREHEAD.topLine,w,h,false);ctx.stroke();
+  ctx.restore();
+}
+
+function drawChin(ctx,lms,w,h){
+  ctx.save();glow(ctx,CHIN.color,1.8,8);
+  polyline(ctx,lms,CHIN.path,w,h,false);ctx.stroke();
+  ctx.restore();
+}
+
+function drawNeck(ctx,lms,w,h){
+  const cc=lms[152],lj=lms[172],rj=lms[397];
+  if(!cc||!lj||!rj)return;
+  ctx.save();glow(ctx,NECK.color,1.5,8);
+  const nd=0.12*h;
+  const[lcx,lcy]=lm(cc,w,h);
+  const[llx,lly]=lm(lj,w,h);
+  const[rlx,rly]=lm(rj,w,h);
+  ctx.beginPath();ctx.moveTo(lcx,lcy);ctx.lineTo(lcx,lcy+nd);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(llx,lly);ctx.lineTo(llx-10,lly+nd);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(rlx,rly);ctx.lineTo(rlx+10,rly+nd);ctx.stroke();
+  ctx.beginPath();ctx.moveTo(llx-10,lly+nd);ctx.lineTo(rlx+10,rly+nd);ctx.stroke();
+  ctx.restore();
+}
+
+function drawHands(ctx,hl,w,h){
+  if(!hl)return;
+  ctx.save();glow(ctx,HAND_COLOR,2.5,10);
+  for(const[a,b]of HAND_CONNECTIONS){
+    const A=hl[a],B=hl[b];if(!A||!B)continue;
+    ctx.beginPath();ctx.moveTo(...lm(A,w,h));ctx.lineTo(...lm(B,w,h));ctx.stroke();
   }
+  ctx.fillStyle=HAND_COLOR;ctx.shadowColor=HAND_COLOR;ctx.shadowBlur=6;
+  for(const pt of hl){const[x,y]=lm(pt,w,h);ctx.beginPath();ctx.arc(x,y,3.5,0,2*Math.PI);ctx.fill();}
+  ctx.restore();
+}
+
+function drawEyeMask(ctx,lms,img,w,h,sc){
+  const L=lms[33],R=lms[263];if(!L||!R||!img)return;
+  const[x1,y1]=lm(L,w,h),[x2,y2]=lm(R,w,h);
+  const cx=(x1+x2)/2,cy=(y1+y2)/2,d=Math.hypot(x2-x1,y2-y1),a=Math.atan2(y2-y1,x2-x1);
+  const iw=d*sc,ih=iw*(img.height/img.width);
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(a);ctx.drawImage(img,-iw/2,-ih/2,iw,ih);ctx.restore();
+}
+
+function drawFaceMask(ctx,lms,img,w,h,sc){
+  const LC=lms[234],RC=lms[454],FH=lms[10],CN=lms[152];if(!LC||!RC||!FH||!CN||!img)return;
+  const[x1,y1]=lm(LC,w,h),[x2,y2]=lm(RC,w,h);
+  const cx=(x1+x2)/2,cy=((FH.y+CN.y)/2)*h,d=Math.hypot(x2-x1,y2-y1),a=Math.atan2(y2-y1,x2-x1);
+  const iw=d*sc,ih=iw*(img.height/img.width);
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(a);ctx.drawImage(img,-iw/2,-ih/2,iw,ih);ctx.restore();
+}
+
+function drawNeonBall(ctx,state,hl,w,h){
+  if(hl&&hl[8]){const t=hl[8];state.x+=(t.x*w-state.x)*0.2;state.y+=(t.y*h-state.y)*0.2;}
+  ctx.save();
+  ctx.beginPath();ctx.arc(state.x,state.y,25,0,2*Math.PI);
+  ctx.fillStyle='rgba(0,229,255,0.35)';ctx.strokeStyle='#00E5FF';ctx.lineWidth=3.5;
+  ctx.shadowColor='#00E5FF';ctx.shadowBlur=18;ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.arc(state.x,state.y,5,0,2*Math.PI);
+  ctx.fillStyle='#fff';ctx.shadowBlur=6;ctx.fill();
+  ctx.restore();
+}
+
+// ════════════════════════════════════════════════════════════════
+//  MAIN
+// ════════════════════════════════════════════════════════════════
+const video   =document.getElementById('webcam');
+const canvas  =document.getElementById('output_canvas');
+const ctx2d   =canvas.getContext('2d');
+const sidebar =document.getElementById('sidebar');
+const backdrop=document.getElementById('sidebar_backdrop');
+const menuBtn =document.getElementById('menu_toggle');
+const iconM   =document.getElementById('icon_menu');
+const iconC   =document.getElementById('icon_close');
+const modeSel =document.getElementById('mode_select');
+const upCont  =document.getElementById('upload_container');
+const imgUp   =document.getElementById('image_upload');
+const fnEl    =document.getElementById('file_name');
+const slider  =document.getElementById('scale_slider');
+const slVal   =document.getElementById('scale_value');
+const cb=id=>document.getElementById(id);
+
+let overlayImg=null,pngScale=2.3;
+let faceLms=null,rHand=null,lHand=null;
+const ball={x:200,y:150};
+
+function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
+resizeCanvas();window.addEventListener('resize',resizeCanvas);
+
+// sidebar
+function openSB(){sidebar.classList.add('open');backdrop.classList.add('active');iconM.style.display='none';iconC.style.display='block';}
+function closeSB(){sidebar.classList.remove('open');backdrop.classList.remove('active');iconM.style.display='block';iconC.style.display='none';}
+menuBtn.addEventListener('click',()=>sidebar.classList.contains('open')?closeSB():openSB());
+backdrop.addEventListener('click',closeSB);
+
+modeSel.addEventListener('change',e=>{
+  const v=e.target.value;
+  if(v==='eyes'||v==='face_mask'){
+    upCont.classList.remove('hidden');
+    if(v==='face_mask'){slider.value='1.3';pngScale=1.3;slVal.textContent='1.3×';}
+    else{slider.value='2.3';pngScale=2.3;slVal.textContent='2.3×';}
+  }else{upCont.classList.add('hidden');}
+});
+
+imgUp.addEventListener('change',e=>{
+  const f=e.target.files[0];if(!f)return;
+  fnEl.textContent=f.name;
+  const r=new FileReader();
+  r.onload=ev=>{const i=new Image();i.onload=()=>{overlayImg=i;};i.src=ev.target.result;};
+  r.readAsDataURL(f);
+});
+
+slider.addEventListener('input',e=>{pngScale=parseFloat(e.target.value);slVal.textContent=pngScale.toFixed(1)+'×';});
+
+// mediapipe
+const holistic=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
+holistic.setOptions({modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:true,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+holistic.onResults(r=>{faceLms=r.faceLandmarks||null;rHand=r.rightHandLandmarks||null;lHand=r.leftHandLandmarks||null;});
+
+function loop(){
+  const W=canvas.width,H=canvas.height;
+  ctx2d.clearRect(0,0,W,H);
+  if(video.readyState>=2)ctx2d.drawImage(video,0,0,W,H);
+
+  const activeHand=rHand||lHand;
+
+  if(faceLms){
+    if(cb('toggle_blur').checked)   drawFaceBlur(ctx2d,faceLms,video,W,H);
+    if(cb('toggle_lips').checked)   drawLips(ctx2d,faceLms,W,H);
+    if(cb('toggle_cheeks').checked) drawCheeks(ctx2d,faceLms,W,H);
+    if(cb('toggle_eyes').checked)   drawEyes(ctx2d,faceLms,W,H);
+    if(cb('toggle_forehead').checked)drawForehead(ctx2d,faceLms,W,H);
+    if(cb('toggle_chin').checked)   drawChin(ctx2d,faceLms,W,H);
+    if(cb('toggle_neck').checked)   drawNeck(ctx2d,faceLms,W,H);
+
+    const mode=modeSel.value;
+    if(mode==='eyes'&&overlayImg)     drawEyeMask(ctx2d,faceLms,overlayImg,W,H,pngScale);
+    else if(mode==='face_mask'&&overlayImg)drawFaceMask(ctx2d,faceLms,overlayImg,W,H,pngScale);
+  }
+
+  if(cb('toggle_hands').checked){
+    if(rHand)drawHands(ctx2d,rHand,W,H);
+    if(lHand)drawHands(ctx2d,lHand,W,H);
+  }
+  if(cb('toggle_neon').checked)drawNeonBall(ctx2d,ball,activeHand,W,H);
 
   requestAnimationFrame(loop);
 }
 
-// ══════════════════════════════════════════════════
-//  MEDIAPIPE
-// ══════════════════════════════════════════════════
-const holistic = new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
-holistic.setOptions({modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:true,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
-holistic.onResults(r=>{ faceLms = r.faceLandmarks||null; });
-
-const camera = new Camera(video,{
-  onFrame: async()=>await holistic.send({image:video}),
-  width:1280, height:720
+const camera=new Camera(video,{
+  onFrame:async()=>await holistic.send({image:video}),
+  width:1280,height:720
 });
 camera.start();
 requestAnimationFrame(loop);
