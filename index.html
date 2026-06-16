@@ -7,17 +7,18 @@
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
   <style>
-/* ── RESET & BASE ───────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --sw:290px;
-  --bg-panel:rgba(8,8,16,0.88);
+  --bg-panel:rgba(8,8,16,0.92);
   --bg-sec:rgba(255,255,255,0.04);
   --border:rgba(255,255,255,0.08);
   --txt:#f0f0f5;
   --muted:#7a7a9a;
   --accent:#00E5FF;
   --accent-dim:rgba(0,229,255,0.15);
+  --snap:#FF6B35;
+  --snap-dim:rgba(255,107,53,0.15);
   --r8:8px;--r12:12px;
   --tr:0.32s cubic-bezier(0.4,0,0.2,1);
   --font:'SF Pro Display',-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
@@ -26,9 +27,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 #webcam{display:none!important}
 #output_canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transform:scaleX(-1);z-index:0}
 
-/* ── MENU BUTTON ────────────────────────────────── */
-#menu_toggle{
-  position:fixed;top:20px;left:20px;z-index:300;
+/* ── BUTTONS ── */
+.fab{
+  position:fixed;left:20px;z-index:300;
   width:44px;height:44px;border-radius:var(--r12);
   border:1px solid var(--border);background:var(--bg-panel);
   backdrop-filter:blur(20px) saturate(1.5);-webkit-backdrop-filter:blur(20px) saturate(1.5);
@@ -36,20 +37,23 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
   transition:background var(--tr),box-shadow var(--tr),transform .15s ease;
   box-shadow:0 4px 24px rgba(0,0,0,0.45);
 }
-#menu_toggle svg{width:20px;height:20px}
-#menu_toggle:hover{background:rgba(0,229,255,0.12);box-shadow:0 0 0 1px var(--accent),0 4px 24px rgba(0,229,255,0.15)}
-#menu_toggle:active{transform:scale(0.94)}
+#menu_toggle{top:20px}
+#snap_toggle{top:74px}
+.fab svg{width:20px;height:20px}
+.fab:hover{background:rgba(0,229,255,0.12);box-shadow:0 0 0 1px var(--accent),0 4px 24px rgba(0,229,255,0.15)}
+.fab:active{transform:scale(0.94)}
+#snap_toggle:hover{background:rgba(255,107,53,0.15);box-shadow:0 0 0 1px var(--snap),0 4px 24px rgba(255,107,53,0.2)}
 
-/* ── BACKDROP ───────────────────────────────────── */
-#sidebar_backdrop{
+/* ── BACKDROP ── */
+.sb-backdrop{
   position:fixed;inset:0;z-index:150;
   background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);
   opacity:0;pointer-events:none;transition:opacity var(--tr);
 }
-#sidebar_backdrop.active{opacity:1;pointer-events:all}
+.sb-backdrop.active{opacity:1;pointer-events:all}
 
-/* ── SIDEBAR ────────────────────────────────────── */
-#sidebar{
+/* ── SIDEBARS ── */
+.sidebar{
   position:fixed;top:0;left:0;height:100vh;width:var(--sw);z-index:200;
   background:var(--bg-panel);
   backdrop-filter:blur(32px) saturate(1.8);-webkit-backdrop-filter:blur(32px) saturate(1.8);
@@ -60,18 +64,19 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
   overflow-y:auto;overflow-x:hidden;
   scrollbar-width:thin;scrollbar-color:rgba(255,255,255,0.1) transparent;
 }
-#sidebar::-webkit-scrollbar{width:4px}
-#sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
-#sidebar.open{transform:translateX(0);box-shadow:4px 0 40px rgba(0,0,0,0.6)}
+.sidebar::-webkit-scrollbar{width:4px}
+.sidebar::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:2px}
+.sidebar.open{transform:translateX(0);box-shadow:4px 0 40px rgba(0,0,0,0.6)}
 
 .sb-header{padding:24px 20px 16px;border-bottom:1px solid var(--border);flex-shrink:0}
 .sb-title{font-size:13px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--accent)}
+#snap_panel .sb-title{color:var(--snap)}
 .sb-sec{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;flex-direction:column;gap:10px}
 .sb-sec.hidden{display:none!important}
 .sec-lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 .sb-footer{padding:16px 20px;margin-top:auto;font-size:11px;color:var(--muted);line-height:1.5}
 
-/* ── SELECT ─────────────────────────────────────── */
+/* ── SELECT ── */
 .sel{
   width:100%;background:var(--bg-sec);border:1px solid var(--border);
   border-radius:var(--r8);color:var(--txt);font-size:13px;padding:9px 12px;
@@ -82,7 +87,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 }
 .sel:hover,.sel:focus{border-color:var(--accent)}
 
-/* ── UPLOAD ─────────────────────────────────────── */
+/* ── UPLOAD ── */
 .up-btn{
   display:inline-flex;align-items:center;gap:8px;
   background:var(--accent-dim);border:1px solid rgba(0,229,255,0.3);
@@ -101,7 +106,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 .rng::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 8px rgba(0,229,255,0.5)}
 .rng::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:none;box-shadow:0 0 8px rgba(0,229,255,0.5)}
 
-/* ── TOGGLE ROWS ────────────────────────────────── */
+/* ── TOGGLE ROWS ── */
 .trow{display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 0;user-select:none;border-radius:var(--r8)}
 .trow:hover{background:rgba(255,255,255,0.03)}
 .tdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
@@ -119,6 +124,20 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 }
 .tcb:checked+.tsw{background:var(--accent-dim);border-color:rgba(0,229,255,0.4)}
 .tcb:checked+.tsw::after{transform:translateX(16px);background:var(--accent);box-shadow:0 0 6px rgba(0,229,255,0.6)}
+
+/* ── SNAP EFFECT BUTTONS ── */
+.snap-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.snap-btn{
+  background:var(--snap-dim);border:1px solid rgba(255,107,53,0.25);
+  color:var(--txt);font-size:12px;font-weight:500;
+  padding:10px 8px;border-radius:var(--r8);cursor:pointer;
+  text-align:center;transition:background var(--tr),border-color var(--tr),box-shadow var(--tr);
+  line-height:1.3;
+}
+.snap-btn .snap-icon{font-size:20px;display:block;margin-bottom:4px}
+.snap-btn:hover{background:rgba(255,107,53,0.25);border-color:var(--snap);box-shadow:0 0 0 1px var(--snap)}
+.snap-btn.active{background:rgba(255,107,53,0.35);border-color:var(--snap);box-shadow:0 0 0 1px var(--snap),0 0 12px rgba(255,107,53,0.3)}
+.snap-intensity{padding:4px 0 0}
   </style>
 </head>
 <body>
@@ -126,7 +145,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 <video id="webcam" autoplay playsinline muted></video>
 <canvas id="output_canvas"></canvas>
 
-<button id="menu_toggle" aria-label="Menü">
+<!-- Ayarlar Butonu -->
+<button id="menu_toggle" class="fab" aria-label="Ayarlar Menüsü">
   <svg id="icon_menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
   </svg>
@@ -135,7 +155,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
   </svg>
 </button>
 
-<aside id="sidebar">
+<!-- Snap Efektleri Butonu -->
+<button id="snap_toggle" class="fab" aria-label="Snap Efektleri">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
+  </svg>
+</button>
+
+<!-- Ana Ayarlar Paneli -->
+<aside id="settings_panel" class="sidebar">
   <div class="sb-header"><span class="sb-title">Ayarlar</span></div>
 
   <div class="sb-sec">
@@ -183,73 +211,110 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
   <div class="sb-footer">Kamera otomatik başlar · Hiçbir veri gönderilmez</div>
 </aside>
 
-<div id="sidebar_backdrop"></div>
+<!-- Snap Efektleri Paneli -->
+<aside id="snap_panel" class="sidebar">
+  <div class="sb-header"><span class="sb-title">✦ Snap Efektleri</span></div>
+
+  <div class="sb-sec">
+    <div class="sec-lbl">Kafa Efektleri</div>
+    <div class="snap-grid">
+      <button class="snap-btn" data-effect="big_head"><span class="snap-icon">🔵</span>Büyük Kafa</button>
+      <button class="snap-btn" data-effect="small_head"><span class="snap-icon">🔹</span>Küçük Kafa</button>
+      <button class="snap-btn" data-effect="alien"><span class="snap-icon">👽</span>Uzaylı</button>
+      <button class="snap-btn" data-effect="bald"><span class="snap-icon">🥚</span>Kel</button>
+    </div>
+  </div>
+
+  <div class="sb-sec">
+    <div class="sec-lbl">Deformasyon</div>
+    <div class="snap-grid">
+      <button class="snap-btn" data-effect="fish_eye"><span class="snap-icon">🐟</span>Balık Gözü</button>
+      <button class="snap-btn" data-effect="wide_face"><span class="snap-icon">↔️</span>Geniş Yüz</button>
+      <button class="snap-btn" data-effect="tall_face"><span class="snap-icon">↕️</span>Uzun Yüz</button>
+      <button class="snap-btn" data-effect="squeeze"><span class="snap-icon">🗜️</span>Sıkıştır</button>
+    </div>
+  </div>
+
+  <div class="sb-sec">
+    <div class="sec-lbl">Renk & Görünüm</div>
+    <div class="snap-grid">
+      <button class="snap-btn" data-effect="rainbow"><span class="snap-icon">🌈</span>Gökkuşağı</button>
+      <button class="snap-btn" data-effect="thermal"><span class="snap-icon">🌡️</span>Termal</button>
+      <button class="snap-btn" data-effect="ghost"><span class="snap-icon">👻</span>Hayalet</button>
+      <button class="snap-btn" data-effect="glitch"><span class="snap-icon">⚡</span>Glitch</button>
+    </div>
+  </div>
+
+  <div class="sb-sec">
+    <div class="sec-lbl">Ekstra</div>
+    <div class="snap-grid">
+      <button class="snap-btn" data-effect="hearts"><span class="snap-icon">❤️</span>Kalp Gözler</button>
+      <button class="snap-btn" data-effect="sunglasses"><span class="snap-icon">🕶️</span>Güneş Gözlüğü</button>
+      <button class="snap-btn" data-effect="beard"><span class="snap-icon">🧔</span>Sakal</button>
+      <button class="snap-btn" data-effect="crown"><span class="snap-icon">👑</span>Taç</button>
+    </div>
+    <div class="snap-grid" style="margin-top:4px">
+      <button class="snap-btn" data-effect="mustache"><span class="snap-icon">👨</span>Bıyık</button>
+      <button class="snap-btn" data-effect="fire"><span class="snap-icon">🔥</span>Ateş</button>
+    </div>
+  </div>
+
+  <div class="sb-sec snap-intensity">
+    <div class="sec-lbl">Yoğunluk</div>
+    <div class="sl-row">
+      <span class="sl-lbl">Güç</span>
+      <input type="range" id="effect_intensity" min="0.1" max="2.0" step="0.1" value="1.0" class="rng" style="--accent:#FF6B35"/>
+      <span id="intensity_value" class="sl-val">1.0×</span>
+    </div>
+  </div>
+
+  <div class="sb-footer">Bir efekt seç · Tekrar bas kapatmak için</div>
+</aside>
+
+<div id="backdrop1" class="sb-backdrop"></div>
+<div id="backdrop2" class="sb-backdrop"></div>
 
 <script>
-// ════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 //  LANDMARKS
-// ════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 const FACE_OVAL=[10,338,297,332,284,251,389,356,454,323,361,288,397,365,379,378,400,377,152,148,176,149,150,136,172,58,132,93,234,127,162,21,54,103,67,109];
 const LIPS={color:'#EF4444',paths:[
   [61,146,91,181,84,17,314,405,321,375,291,308,324,318,402,317,14,87,178,88,95,78,61],
   [78,191,80,81,82,13,312,311,310,415,308],
   [78,95,88,178,87,14,317,402,318,324,308]
 ]};
-const CHEEKS={color:'#EAB308',
-  leftPath: [234,93,132,58,172,136,150,149,176,148,152],
-  rightPath:[454,323,361,288,397,365,379,378,400,377,152]
-};
+const CHEEKS={color:'#EAB308',leftPath:[234,93,132,58,172,136,150,149,176,148,152],rightPath:[454,323,361,288,397,365,379,378,400,377,152]};
 const EYES={color:'#22C55E',
-  left: {upper:[33,246,161,160,159,158,157,173,133],lower:[33,7,163,144,145,153,154,155,133],iris:[468,469,470,471,472]},
+  left:{upper:[33,246,161,160,159,158,157,173,133],lower:[33,7,163,144,145,153,154,155,133],iris:[468,469,470,471,472]},
   right:{upper:[263,466,388,387,386,385,384,398,362],lower:[263,249,390,373,374,380,381,382,362],iris:[473,474,475,476,477]}
 };
-const FOREHEAD={color:'#3B82F6',
-  browLeft: [70,63,105,66,107,55,65,52,53,46],
-  browRight:[300,293,334,296,336,285,295,282,283,276],
-  topLine:  [10,338,297,332,284,251,389,356,21,54,103,67,109]
-};
+const FOREHEAD={color:'#3B82F6',browLeft:[70,63,105,66,107,55,65,52,53,46],browRight:[300,293,334,296,336,285,295,282,283,276],topLine:[10,338,297,332,284,251,389,356,21,54,103,67,109]};
 const CHIN={color:'#F97316',path:[172,136,150,149,176,148,152,377,400,378,379,365,397]};
 const NECK={color:'#A855F7'};
 const HAND_COLOR='#EC4899';
 const HAND_CONNECTIONS=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
 
-// ════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 //  DRAW HELPERS
-// ════════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════
 function lm(pt,w,h){return[pt.x*w,pt.y*h]}
 function polyline(ctx,lms,idx,w,h,close=false){
   if(!idx||idx.length<2)return;
   ctx.beginPath();
-  for(let i=0;i<idx.length;i++){
-    const pt=lms[idx[i]];if(!pt)continue;
-    const[x,y]=lm(pt,w,h);
-    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-  }
+  for(let i=0;i<idx.length;i++){const pt=lms[idx[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
   if(close)ctx.closePath();
 }
-function glow(ctx,color,lw=1.5,blur=7){
-  ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.shadowColor=color;ctx.shadowBlur=blur;
-}
+function glow(ctx,color,lw=1.5,blur=7){ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.shadowColor=color;ctx.shadowBlur=blur;}
 
 function drawFaceBlur(ctx,lms,video,w,h){
   ctx.save();ctx.beginPath();
-  for(let i=0;i<FACE_OVAL.length;i++){
-    const pt=lms[FACE_OVAL[i]];if(!pt)continue;
-    const[x,y]=lm(pt,w,h);
-    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-  }
-  ctx.closePath();ctx.clip();
-  ctx.filter='blur(22px)';
+  for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+  ctx.closePath();ctx.clip();ctx.filter='blur(22px)';
   if(video.readyState>=2)ctx.drawImage(video,0,0,w,h);
   ctx.restore();
 }
-
-function drawLips(ctx,lms,w,h){
-  ctx.save();glow(ctx,LIPS.color,1.8,9);
-  for(const p of LIPS.paths){polyline(ctx,lms,p,w,h,false);ctx.stroke();}
-  ctx.restore();
-}
-
+function drawLips(ctx,lms,w,h){ctx.save();glow(ctx,LIPS.color,1.8,9);for(const p of LIPS.paths){polyline(ctx,lms,p,w,h,false);ctx.stroke();}ctx.restore();}
 function drawCheeks(ctx,lms,w,h){
   ctx.save();glow(ctx,CHEEKS.color,1.5,8);
   polyline(ctx,lms,CHEEKS.leftPath,w,h,false);ctx.stroke();
@@ -259,7 +324,6 @@ function drawCheeks(ctx,lms,w,h){
   polyline(ctx,lms,CHEEKS.rightPath,w,h,true);ctx.fill();
   ctx.restore();
 }
-
 function drawEyes(ctx,lms,w,h){
   ctx.save();glow(ctx,EYES.color,1.5,10);
   const drawEye=e=>{
@@ -267,58 +331,39 @@ function drawEyes(ctx,lms,w,h){
     polyline(ctx,lms,e.lower,w,h,false);ctx.stroke();
     if(e.iris&&lms[e.iris[0]]){
       const pts=e.iris.map(i=>lms[i]);
-      const ax=pts.reduce((s,p)=>s+p.x*w,0)/pts.length;
-      const ay=pts.reduce((s,p)=>s+p.y*h,0)/pts.length;
+      const ax=pts.reduce((s,p)=>s+p.x*w,0)/pts.length,ay=pts.reduce((s,p)=>s+p.y*h,0)/pts.length;
       const r=Math.hypot(pts[1].x*w-pts[3].x*w,pts[1].y*h-pts[3].y*h)/2;
       ctx.beginPath();ctx.arc(ax,ay,r,0,2*Math.PI);ctx.stroke();
     }
   };
-  drawEye(EYES.left);drawEye(EYES.right);
-  ctx.restore();
+  drawEye(EYES.left);drawEye(EYES.right);ctx.restore();
 }
-
 function drawForehead(ctx,lms,w,h){
   ctx.save();glow(ctx,FOREHEAD.color,1.5,8);
   polyline(ctx,lms,FOREHEAD.browLeft,w,h,false);ctx.stroke();
   polyline(ctx,lms,FOREHEAD.browRight,w,h,false);ctx.stroke();
-  ctx.globalAlpha=0.45;
-  polyline(ctx,lms,FOREHEAD.topLine,w,h,false);ctx.stroke();
+  ctx.globalAlpha=0.45;polyline(ctx,lms,FOREHEAD.topLine,w,h,false);ctx.stroke();
   ctx.restore();
 }
-
-function drawChin(ctx,lms,w,h){
-  ctx.save();glow(ctx,CHIN.color,1.8,8);
-  polyline(ctx,lms,CHIN.path,w,h,false);ctx.stroke();
-  ctx.restore();
-}
-
+function drawChin(ctx,lms,w,h){ctx.save();glow(ctx,CHIN.color,1.8,8);polyline(ctx,lms,CHIN.path,w,h,false);ctx.stroke();ctx.restore();}
 function drawNeck(ctx,lms,w,h){
-  const cc=lms[152],lj=lms[172],rj=lms[397];
-  if(!cc||!lj||!rj)return;
+  const cc=lms[152],lj=lms[172],rj=lms[397];if(!cc||!lj||!rj)return;
   ctx.save();glow(ctx,NECK.color,1.5,8);
-  const nd=0.12*h;
-  const[lcx,lcy]=lm(cc,w,h);
-  const[llx,lly]=lm(lj,w,h);
-  const[rlx,rly]=lm(rj,w,h);
+  const nd=0.12*h;const[lcx,lcy]=lm(cc,w,h);const[llx,lly]=lm(lj,w,h);const[rlx,rly]=lm(rj,w,h);
   ctx.beginPath();ctx.moveTo(lcx,lcy);ctx.lineTo(lcx,lcy+nd);ctx.stroke();
   ctx.beginPath();ctx.moveTo(llx,lly);ctx.lineTo(llx-10,lly+nd);ctx.stroke();
   ctx.beginPath();ctx.moveTo(rlx,rly);ctx.lineTo(rlx+10,rly+nd);ctx.stroke();
   ctx.beginPath();ctx.moveTo(llx-10,lly+nd);ctx.lineTo(rlx+10,rly+nd);ctx.stroke();
   ctx.restore();
 }
-
 function drawHands(ctx,hl,w,h){
   if(!hl)return;
   ctx.save();glow(ctx,HAND_COLOR,2.5,10);
-  for(const[a,b]of HAND_CONNECTIONS){
-    const A=hl[a],B=hl[b];if(!A||!B)continue;
-    ctx.beginPath();ctx.moveTo(...lm(A,w,h));ctx.lineTo(...lm(B,w,h));ctx.stroke();
-  }
+  for(const[a,b]of HAND_CONNECTIONS){const A=hl[a],B=hl[b];if(!A||!B)continue;ctx.beginPath();ctx.moveTo(...lm(A,w,h));ctx.lineTo(...lm(B,w,h));ctx.stroke();}
   ctx.fillStyle=HAND_COLOR;ctx.shadowColor=HAND_COLOR;ctx.shadowBlur=6;
   for(const pt of hl){const[x,y]=lm(pt,w,h);ctx.beginPath();ctx.arc(x,y,3.5,0,2*Math.PI);ctx.fill();}
   ctx.restore();
 }
-
 function drawEyeMask(ctx,lms,img,w,h,sc){
   const L=lms[33],R=lms[263];if(!L||!R||!img)return;
   const[x1,y1]=lm(L,w,h),[x2,y2]=lm(R,w,h);
@@ -326,7 +371,6 @@ function drawEyeMask(ctx,lms,img,w,h,sc){
   const iw=d*sc,ih=iw*(img.height/img.width);
   ctx.save();ctx.translate(cx,cy);ctx.rotate(a);ctx.drawImage(img,-iw/2,-ih/2,iw,ih);ctx.restore();
 }
-
 function drawFaceMask(ctx,lms,img,w,h,sc){
   const LC=lms[234],RC=lms[454],FH=lms[10],CN=lms[152];if(!LC||!RC||!FH||!CN||!img)return;
   const[x1,y1]=lm(LC,w,h),[x2,y2]=lm(RC,w,h);
@@ -334,50 +378,555 @@ function drawFaceMask(ctx,lms,img,w,h,sc){
   const iw=d*sc,ih=iw*(img.height/img.width);
   ctx.save();ctx.translate(cx,cy);ctx.rotate(a);ctx.drawImage(img,-iw/2,-ih/2,iw,ih);ctx.restore();
 }
-
 function drawNeonBall(ctx,state,hl,w,h){
   if(hl&&hl[8]){const t=hl[8];state.x+=(t.x*w-state.x)*0.2;state.y+=(t.y*h-state.y)*0.2;}
   ctx.save();
   ctx.beginPath();ctx.arc(state.x,state.y,25,0,2*Math.PI);
   ctx.fillStyle='rgba(0,229,255,0.35)';ctx.strokeStyle='#00E5FF';ctx.lineWidth=3.5;
   ctx.shadowColor='#00E5FF';ctx.shadowBlur=18;ctx.fill();ctx.stroke();
-  ctx.beginPath();ctx.arc(state.x,state.y,5,0,2*Math.PI);
-  ctx.fillStyle='#fff';ctx.shadowBlur=6;ctx.fill();
+  ctx.beginPath();ctx.arc(state.x,state.y,5,0,2*Math.PI);ctx.fillStyle='#fff';ctx.shadowBlur=6;ctx.fill();
   ctx.restore();
 }
 
-// ════════════════════════════════════════════════════════════════
-//  MAIN
-// ════════════════════════════════════════════════════════════════
-const video   =document.getElementById('webcam');
-const canvas  =document.getElementById('output_canvas');
-const ctx2d   =canvas.getContext('2d');
-const sidebar =document.getElementById('sidebar');
-const backdrop=document.getElementById('sidebar_backdrop');
-const menuBtn =document.getElementById('menu_toggle');
-const iconM   =document.getElementById('icon_menu');
-const iconC   =document.getElementById('icon_close');
-const modeSel =document.getElementById('mode_select');
-const upCont  =document.getElementById('upload_container');
-const imgUp   =document.getElementById('image_upload');
-const fnEl    =document.getElementById('file_name');
-const slider  =document.getElementById('scale_slider');
-const slVal   =document.getElementById('scale_value');
+// ══════════════════════════════════════════════
+//  SNAP EFFECTS
+// ══════════════════════════════════════════════
+let activeEffect=null;
+let effectIntensity=1.0;
+let glitchOffset=0;
+let glitchTimer=0;
+const particles=[];
+
+function getFaceBounds(lms,w,h){
+  const FH=lms[10],CN=lms[152],LC=lms[234],RC=lms[454];
+  if(!FH||!CN||!LC||!RC)return null;
+  const[fhx,fhy]=lm(FH,w,h);
+  const[cnx,cny]=lm(CN,w,h);
+  const[lcx,lcy]=lm(LC,w,h);
+  const[rcx,rcy]=lm(RC,w,h);
+  const cx=(lcx+rcx)/2,cy=(fhy+cny)/2;
+  const faceW=Math.hypot(rcx-lcx,rcy-lcy);
+  const faceH=Math.hypot(cnx-fhx,cny-fhy);
+  const angle=Math.atan2(rcy-lcy,rcx-lcx);
+  return{cx,cy,faceW,faceH,angle,fhx,fhy,cnx,cny,lcx,lcy,rcx,rcy};
+}
+
+function getIrisCenter(lms,irisIdx,w,h){
+  const pts=irisIdx.map(i=>lms[i]).filter(Boolean);
+  if(!pts.length)return null;
+  return[pts.reduce((s,p)=>s+p.x*w,0)/pts.length,pts.reduce((s,p)=>s+p.y*h,0)/pts.length];
+}
+
+function getIrisRadius(lms,irisIdx,w,h){
+  const pts=irisIdx.map(i=>lms[i]).filter(Boolean);
+  if(pts.length<4)return 10;
+  return Math.hypot(pts[1].x*w-pts[3].x*w,pts[1].y*h-pts[3].y*h)/2;
+}
+
+function drawBigHead(ctx,lms,video,w,h,intensity){
+  const b=getFaceBounds(lms,w,h);if(!b)return;
+  const scale=1+0.6*intensity;
+  ctx.save();
+  ctx.translate(b.cx,b.cy);
+  ctx.rotate(b.angle);
+  ctx.scale(scale,scale);
+  ctx.rotate(-b.angle);
+  ctx.translate(-b.cx,-b.cy);
+  if(video.readyState>=2){
+    ctx.beginPath();
+    for(let i=0;i<FACE_OVAL.length;i++){
+      const pt=lms[FACE_OVAL[i]];if(!pt)continue;
+      const[x,y]=lm(pt,w,h);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();ctx.clip();
+    ctx.drawImage(video,0,0,w,h);
+  }
+  ctx.restore();
+}
+
+function drawSmallHead(ctx,lms,video,w,h,intensity){
+  const b=getFaceBounds(lms,w,h);if(!b)return;
+  const scale=Math.max(0.3,1-0.45*intensity);
+  ctx.save();
+  // Önce yüzü arka planla örtelim
+  ctx.beginPath();
+  for(let i=0;i<FACE_OVAL.length;i++){
+    const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.closePath();ctx.fillStyle='#07070f';ctx.fill();
+  ctx.translate(b.cx,b.cy);ctx.rotate(b.angle);ctx.scale(scale,scale);ctx.rotate(-b.angle);ctx.translate(-b.cx,-b.cy);
+  if(video.readyState>=2){
+    ctx.beginPath();
+    for(let i=0;i<FACE_OVAL.length;i++){
+      const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.closePath();ctx.clip();ctx.drawImage(video,0,0,w,h);
+  }
+  ctx.restore();
+}
+
+function drawAlien(ctx,lms,w,h,intensity){
+  const b=getFaceBounds(lms,w,h);if(!b)return;
+  ctx.save();
+  // Uzun kafa oval
+  ctx.translate(b.cx,b.fhy-b.faceH*0.2*intensity);
+  ctx.scale(1,1+0.5*intensity);
+  ctx.beginPath();
+  ctx.ellipse(0,0,b.faceW*0.5,b.faceH*0.55,b.angle,0,2*Math.PI);
+  const g=ctx.createRadialGradient(0,-10,5,0,0,b.faceW*0.5);
+  g.addColorStop(0,'rgba(100,230,100,0.5)');
+  g.addColorStop(1,'rgba(20,80,20,0.85)');
+  ctx.fillStyle=g;ctx.fill();
+  ctx.strokeStyle='rgba(0,255,120,0.7)';ctx.lineWidth=2;ctx.shadowColor='#00ff88';ctx.shadowBlur=15;ctx.stroke();
+  ctx.restore();
+
+  // Büyük gözler
+  const lIris=getIrisCenter(lms,EYES.left.iris,w,h);
+  const rIris=getIrisCenter(lms,EYES.right.iris,w,h);
+  const lR=getIrisRadius(lms,EYES.left.iris,w,h)*2.5*intensity;
+  const rR=getIrisRadius(lms,EYES.right.iris,w,h)*2.5*intensity;
+  ctx.save();
+  if(lIris){
+    const gL=ctx.createRadialGradient(lIris[0],lIris[1],0,lIris[0],lIris[1],lR);
+    gL.addColorStop(0,'#000');gL.addColorStop(0.4,'#003300');gL.addColorStop(1,'rgba(0,150,50,0.8)');
+    ctx.beginPath();ctx.ellipse(lIris[0],lIris[1],lR,lR*1.3,b.angle,0,2*Math.PI);
+    ctx.fillStyle=gL;ctx.fill();ctx.strokeStyle='rgba(0,255,100,0.9)';ctx.lineWidth=1.5;ctx.shadowColor='#00ff80';ctx.shadowBlur=12;ctx.stroke();
+  }
+  if(rIris){
+    const gR=ctx.createRadialGradient(rIris[0],rIris[1],0,rIris[0],rIris[1],rR);
+    gR.addColorStop(0,'#000');gR.addColorStop(0.4,'#003300');gR.addColorStop(1,'rgba(0,150,50,0.8)');
+    ctx.beginPath();ctx.ellipse(rIris[0],rIris[1],rR,rR*1.3,b.angle,0,2*Math.PI);
+    ctx.fillStyle=gR;ctx.fill();ctx.strokeStyle='rgba(0,255,100,0.9)';ctx.lineWidth=1.5;ctx.shadowColor='#00ff80';ctx.shadowBlur=12;ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawBald(ctx,lms,video,w,h,intensity){
+  const FH=lms[10],LC=lms[234],RC=lms[454];if(!FH||!LC||!RC)return;
+  const[fhx,fhy]=lm(FH,w,h);
+  const[lcx,lcy]=lm(LC,w,h);
+  const[rcx,rcy]=lm(RC,w,h);
+  const faceW=Math.hypot(rcx-lcx,rcy-lcy);
+  const angle=Math.atan2(rcy-lcy,rcx-lcx);
+  const cx=(lcx+rcx)/2,cy=fhy-faceW*0.05;
+  ctx.save();
+  ctx.translate(cx,cy);ctx.rotate(angle);
+  // Kafa derisi rengi - cilt tonu
+  ctx.beginPath();
+  ctx.ellipse(0,0,faceW*0.52,faceW*0.38*intensity,0,Math.PI,2*Math.PI);
+  const skinG=ctx.createRadialGradient(0,-faceW*0.1,0,0,0,faceW*0.55);
+  skinG.addColorStop(0,'#f5c99a');skinG.addColorStop(0.6,'#e8b88a');skinG.addColorStop(1,'#c49060');
+  ctx.fillStyle=skinG;ctx.shadowColor='rgba(0,0,0,0.4)';ctx.shadowBlur=10;ctx.fill();
+  // Parlak yansıma
+  ctx.beginPath();ctx.ellipse(-faceW*0.05,-faceW*0.12,faceW*0.08,faceW*0.05,-0.4,0,2*Math.PI);
+  ctx.fillStyle='rgba(255,255,255,0.25)';ctx.shadowBlur=0;ctx.fill();
+  ctx.restore();
+}
+
+function drawFishEye(ctx,lms,video,w,h,intensity){
+  const b=getFaceBounds(lms,w,h);if(!b||video.readyState<2)return;
+  // Balık gözü efekti - merkezden dışa doğru genişleme
+  const offCanvas=document.createElement('canvas');
+  offCanvas.width=w;offCanvas.height=h;
+  const offCtx=offCanvas.getContext('2d');
+  offCtx.drawImage(video,0,0,w,h);
+  const imgData=offCtx.getImageData(0,0,w,h);
+  const outData=ctx.createImageData(w,h);
+  const cx=b.cx,cy=b.cy,R=b.faceW*0.6;
+  const str=intensity*0.7;
+  for(let y=0;y<h;y++){
+    for(let x=0;x<w;x++){
+      const dx=(x-cx)/R,dy=(y-cy)/R;
+      const dist=Math.sqrt(dx*dx+dy*dy);
+      let sx=x,sy=y;
+      if(dist<1){
+        const factor=1-str*(1-dist*dist);
+        sx=cx+dx*R*factor;sy=cy+dy*R*factor;
+      }
+      sx=Math.max(0,Math.min(w-1,Math.round(sx)));
+      sy=Math.max(0,Math.min(h-1,Math.round(sy)));
+      const si=(sy*w+sx)*4,di=(y*w+x)*4;
+      outData.data[di]=imgData.data[si];outData.data[di+1]=imgData.data[si+1];
+      outData.data[di+2]=imgData.data[si+2];outData.data[di+3]=imgData.data[si+3];
+    }
+  }
+  ctx.putImageData(outData,0,0);
+}
+
+function drawWideFace(ctx,lms,video,w,h,intensity){
+  const b=getFaceBounds(lms,w,h);if(!b)return;
+  ctx.save();
+  ctx.beginPath();
+  for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+  ctx.closePath();ctx.fillStyle='#07070f';ctx.fill();
+  ctx.translate(b.cx,b.cy);ctx.rotate(b.angle);ctx.scale(1+0.5*intensity,1);ctx.rotate(-b.angle);ctx.translate(-b.cx,-b.cy);
+  if(video.readyState>=2){
+    ctx.beginPath();
+    for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+    ctx.closePath();ctx.clip();ctx.drawImage(video,0,0,w,h);
+  }
+  ctx.restore();
+}
+
+function drawTallFace(ctx,lms,video,w,h,intensity){
+  const b=getFaceBounds(lms,w,h);if(!b)return;
+  ctx.save();
+  ctx.beginPath();
+  for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+  ctx.closePath();ctx.fillStyle='#07070f';ctx.fill();
+  ctx.translate(b.cx,b.cy);ctx.rotate(b.angle);ctx.scale(1,1+0.5*intensity);ctx.rotate(-b.angle);ctx.translate(-b.cx,-b.cy);
+  if(video.readyState>=2){
+    ctx.beginPath();
+    for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+    ctx.closePath();ctx.clip();ctx.drawImage(video,0,0,w,h);
+  }
+  ctx.restore();
+}
+
+function drawSqueeze(ctx,lms,video,w,h,intensity){
+  const b=getFaceBounds(lms,w,h);if(!b)return;
+  ctx.save();
+  ctx.beginPath();
+  for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+  ctx.closePath();ctx.fillStyle='#07070f';ctx.fill();
+  ctx.translate(b.cx,b.cy);ctx.rotate(b.angle);ctx.scale(Math.max(0.35,1-0.4*intensity),1+0.3*intensity);ctx.rotate(-b.angle);ctx.translate(-b.cx,-b.cy);
+  if(video.readyState>=2){
+    ctx.beginPath();
+    for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+    ctx.closePath();ctx.clip();ctx.drawImage(video,0,0,w,h);
+  }
+  ctx.restore();
+}
+
+function drawRainbow(ctx,lms,w,h,t){
+  const b=getFaceBounds(lms,w,h);if(!b)return;
+  const cx=b.cx,cy=b.cy;
+  const R=b.faceW*0.7;
+  const colors=['#FF0000','#FF7700','#FFFF00','#00FF00','#0000FF','#8B00FF'];
+  ctx.save();
+  ctx.globalAlpha=0.55;ctx.shadowBlur=0;
+  for(let i=0;i<colors.length;i++){
+    ctx.beginPath();
+    ctx.arc(cx,cy,R*(0.5+i*0.1),Math.PI+0.2,2*Math.PI-0.2);
+    ctx.strokeStyle=colors[i];ctx.lineWidth=10;ctx.globalAlpha=0.6;ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawThermal(ctx,lms,video,w,h){
+  const b=getFaceBounds(lms,w,h);if(!b||video.readyState<2)return;
+  const offCanvas=document.createElement('canvas');
+  offCanvas.width=w;offCanvas.height=h;
+  const offCtx=offCanvas.getContext('2d');
+  offCtx.drawImage(video,0,0,w,h);
+  const imgData=offCtx.getImageData(0,0,w,h);
+  const d=imgData.data;
+  for(let i=0;i<d.length;i+=4){
+    const g=(d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114)/255;
+    if(g<0.25){d[i]=0;d[i+1]=0;d[i+2]=Math.round(g*4*255);}
+    else if(g<0.5){d[i]=0;d[i+1]=Math.round((g-0.25)*4*255);d[i+2]=255-Math.round((g-0.25)*4*255);}
+    else if(g<0.75){d[i]=Math.round((g-0.5)*4*255);d[i+1]=255;d[i+2]=0;}
+    else{d[i]=255;d[i+1]=255-Math.round((g-0.75)*4*255);d[i+2]=0;}
+  }
+  offCtx.putImageData(imgData,0,0);
+  // Sadece yüz bölgesine uygula
+  ctx.save();
+  ctx.beginPath();
+  for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+  ctx.closePath();ctx.clip();ctx.drawImage(offCanvas,0,0,w,h);
+  ctx.restore();
+}
+
+function drawGhost(ctx,lms,video,w,h,intensity){
+  const b=getFaceBounds(lms,w,h);if(!b)return;
+  ctx.save();
+  ctx.beginPath();
+  for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+  ctx.closePath();ctx.clip();
+  if(video.readyState>=2){ctx.globalAlpha=0.15;ctx.drawImage(video,0,0,w,h);}
+  ctx.globalAlpha=0.7*intensity;
+  const ghostG=ctx.createRadialGradient(b.cx,b.cy,0,b.cx,b.cy,b.faceW*0.6);
+  ghostG.addColorStop(0,'rgba(200,220,255,0.9)');ghostG.addColorStop(0.5,'rgba(100,150,255,0.4)');ghostG.addColorStop(1,'rgba(50,80,200,0)');
+  ctx.fillStyle=ghostG;ctx.shadowColor='rgba(100,150,255,0.8)';ctx.shadowBlur=25;
+  ctx.fillRect(0,0,w,h);
+  ctx.restore();
+}
+
+function drawGlitch(ctx,video,w,h){
+  if(video.readyState<2)return;
+  glitchTimer++;
+  if(glitchTimer%3===0)glitchOffset=Math.floor(Math.random()*40)-20;
+  ctx.save();
+  ctx.globalCompositeOperation='screen';
+  ctx.globalAlpha=0.5;ctx.drawImage(video,glitchOffset,0,w,h);
+  ctx.globalAlpha=0.4;ctx.drawImage(video,-glitchOffset/2,2,w,h);
+  ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
+  // Renkli çizgiler
+  const numLines=Math.floor(Math.random()*5)+2;
+  for(let i=0;i<numLines;i++){
+    const y=Math.random()*h;const lineH=Math.random()*6+2;
+    ctx.fillStyle=`rgba(${Math.random()>0.5?255:0},0,${Math.random()>0.5?255:0},0.6)`;
+    ctx.fillRect(0,y,w,lineH);
+  }
+  ctx.restore();
+}
+
+function drawHearts(ctx,lms,w,h,intensity){
+  const lIris=getIrisCenter(lms,EYES.left.iris,w,h);
+  const rIris=getIrisCenter(lms,EYES.right.iris,w,h);
+  const lR=getIrisRadius(lms,EYES.left.iris,w,h)*2.5*intensity;
+  const rR=getIrisRadius(lms,EYES.right.iris,w,h)*2.5*intensity;
+  function heartPath(ctx,cx,cy,size){
+    ctx.beginPath();
+    ctx.moveTo(cx,cy+size*0.5);
+    ctx.bezierCurveTo(cx-size,cy-size*0.5,cx-size*2,cy+size,cx,cy+size*1.5);
+    ctx.bezierCurveTo(cx+size*2,cy+size,cx+size,cy-size*0.5,cx,cy+size*0.5);
+    ctx.closePath();
+  }
+  ctx.save();
+  if(lIris){
+    const g=ctx.createRadialGradient(lIris[0],lIris[1],0,lIris[0],lIris[1],lR);
+    g.addColorStop(0,'#ff4488');g.addColorStop(1,'#cc0033');
+    ctx.fillStyle=g;ctx.shadowColor='#ff2266';ctx.shadowBlur=15;
+    ctx.save();ctx.translate(lIris[0],lIris[1]-lR*0.3);ctx.scale(lR/25,lR/25);
+    heartPath(ctx,0,0,12);ctx.fill();ctx.restore();
+  }
+  if(rIris){
+    const g=ctx.createRadialGradient(rIris[0],rIris[1],0,rIris[0],rIris[1],rR);
+    g.addColorStop(0,'#ff4488');g.addColorStop(1,'#cc0033');
+    ctx.fillStyle=g;ctx.shadowColor='#ff2266';ctx.shadowBlur=15;
+    ctx.save();ctx.translate(rIris[0],rIris[1]-rR*0.3);ctx.scale(rR/25,rR/25);
+    heartPath(ctx,0,0,12);ctx.fill();ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawSunglasses(ctx,lms,w,h,intensity){
+  const L=lms[33],R=lms[263];if(!L||!R)return;
+  const[x1,y1]=lm(L,w,h),[x2,y2]=lm(R,w,h);
+  const cx=(x1+x2)/2,cy=(y1+y2)/2;
+  const d=Math.hypot(x2-x1,y2-y1);
+  const a=Math.atan2(y2-y1,x2-x1);
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(a);
+  const lensW=d*0.5,lensH=d*0.32;
+  // Sol lens
+  const gL=ctx.createLinearGradient(-d*0.48,-lensH,d*0,-lensH*0.5);
+  gL.addColorStop(0,'rgba(0,0,80,0.95)');gL.addColorStop(1,'rgba(30,30,120,0.8)');
+  ctx.beginPath();ctx.ellipse(-d*0.28,0,lensW*0.47,lensH,0,0,2*Math.PI);ctx.fillStyle=gL;ctx.fill();
+  ctx.strokeStyle='#888';ctx.lineWidth=3;ctx.shadowColor='rgba(0,0,0,0.8)';ctx.shadowBlur=10;ctx.stroke();
+  // Sağ lens
+  const gR=ctx.createLinearGradient(d*0,lensH,d*0.48,-lensH*0.5);
+  gR.addColorStop(0,'rgba(0,0,80,0.95)');gR.addColorStop(1,'rgba(30,30,120,0.8)');
+  ctx.beginPath();ctx.ellipse(d*0.28,0,lensW*0.47,lensH,0,0,2*Math.PI);ctx.fillStyle=gR;ctx.fill();ctx.stroke();
+  // Köprü
+  ctx.beginPath();ctx.moveTo(-d*0.28+lensW*0.47*0.9,0);ctx.lineTo(d*0.28-lensW*0.47*0.9,0);ctx.strokeStyle='#888';ctx.lineWidth=3;ctx.stroke();
+  // Yansıma
+  ctx.beginPath();ctx.ellipse(-d*0.35,-lensH*0.2,lensW*0.1,lensH*0.15,-0.3,0,2*Math.PI);ctx.fillStyle='rgba(255,255,255,0.25)';ctx.shadowBlur=0;ctx.fill();
+  ctx.beginPath();ctx.ellipse(d*0.21,-lensH*0.2,lensW*0.1,lensH*0.15,-0.3,0,2*Math.PI);ctx.fillStyle='rgba(255,255,255,0.25)';ctx.fill();
+  ctx.restore();
+}
+
+function drawBeard(ctx,lms,w,h,intensity){
+  const cn=lms[152],lj=lms[172],rj=lms[397],lm1=lms[148],rm1=lms[377];
+  if(!cn||!lj||!rj)return;
+  const[cnx,cny]=lm(cn,w,h);
+  const[ljx,ljy]=lm(lj,w,h);
+  const[rjx,rjy]=lm(rj,w,h);
+  const beardH=Math.hypot(rjx-ljx,rjy-ljy)*0.7*intensity;
+  ctx.save();
+  ctx.beginPath();
+  ctx.moveTo(ljx,ljy);
+  ctx.bezierCurveTo(ljx-10,ljy+beardH*0.7,cnx-5,cny+beardH,cnx,cny+beardH*1.1);
+  ctx.bezierCurveTo(cnx+5,cny+beardH,rjx+10,rjy+beardH*0.7,rjx,rjy);
+  ctx.closePath();
+  const bg=ctx.createLinearGradient(cnx,cny,cnx,cny+beardH);
+  bg.addColorStop(0,'rgba(40,25,15,0.9)');bg.addColorStop(1,'rgba(20,12,8,0.7)');
+  ctx.fillStyle=bg;ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=8;ctx.fill();
+  // Sakal kılları
+  ctx.strokeStyle='rgba(80,50,30,0.4)';ctx.lineWidth=1;ctx.shadowBlur=0;
+  for(let i=0;i<30;i++){
+    const tx=ljx+(rjx-ljx)*(i/29);const ty=ljy+(rjy-ljy)*(i/29);
+    ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx+(Math.random()-0.5)*6,ty+Math.random()*beardH*0.4);ctx.stroke();
+  }
+  ctx.restore();
+}
+
+function drawCrown(ctx,lms,w,h,intensity){
+  const FH=lms[10],LC=lms[234],RC=lms[454];if(!FH||!LC||!RC)return;
+  const[fhx,fhy]=lm(FH,w,h);
+  const[lcx,lcy]=lm(LC,w,h);
+  const[rcx,rcy]=lm(RC,w,h);
+  const faceW=Math.hypot(rcx-lcx,rcy-lcy);
+  const angle=Math.atan2(rcy-lcy,rcx-lcx);
+  const cx=(lcx+rcx)/2,cy=fhy-faceW*0.08;
+  const cw=faceW*1.05,ch=faceW*0.4*intensity;
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(angle);
+  // Taç gövdesi
+  const cg=ctx.createLinearGradient(0,-ch,0,0);
+  cg.addColorStop(0,'#FFD700');cg.addColorStop(0.5,'#FFA500');cg.addColorStop(1,'#CC8800');
+  ctx.fillStyle=cg;ctx.shadowColor='rgba(255,180,0,0.6)';ctx.shadowBlur=15;
+  ctx.beginPath();
+  ctx.moveTo(-cw/2,0);
+  // 5 diş
+  const teeth=5;const tw=cw/teeth;
+  for(let i=0;i<teeth;i++){
+    const x=-cw/2+i*tw;const peak=i%2===0?-ch:(-ch*0.55);
+    ctx.lineTo(x,0);ctx.lineTo(x+tw/2,peak);ctx.lineTo(x+tw,0);
+  }
+  ctx.lineTo(cw/2,0);ctx.closePath();ctx.fill();
+  ctx.strokeStyle='rgba(200,140,0,0.8)';ctx.lineWidth=2;ctx.shadowBlur=0;ctx.stroke();
+  // Taşlar
+  const gemColors=['#FF3366','#3366FF','#33FF66','#FF6633','#9933FF'];
+  for(let i=0;i<5;i++){
+    const gx=-cw/2+i*tw+tw/2;
+    const gy=i%2===0?-ch+5:-ch*0.55+5;
+    ctx.beginPath();ctx.arc(gx,gy,tw*0.12,0,2*Math.PI);
+    ctx.fillStyle=gemColors[i];ctx.shadowColor=gemColors[i];ctx.shadowBlur=8;ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawMustache(ctx,lms,w,h,intensity){
+  const nose=lms[2],lmouth=lms[61],rmouth=lms[291];
+  if(!nose||!lmouth||!rmouth)return;
+  const[nx,ny]=lm(nose,w,h);
+  const[lmx,lmy]=lm(lmouth,w,h);
+  const[rmx,rmy]=lm(rmouth,w,h);
+  const mw=(rmx-lmx)*1.2*intensity;
+  const my=(lmy+rmy)/2-((rmy-ny)/2)*0.3;
+  const angle=Math.atan2(rmy-lmy,rmx-lmx);
+  ctx.save();ctx.translate((lmx+rmx)/2,my);ctx.rotate(angle);
+  const mg=ctx.createLinearGradient(0,-10,0,10);
+  mg.addColorStop(0,'rgba(20,10,5,0.95)');mg.addColorStop(1,'rgba(50,30,15,0.8)');
+  ctx.fillStyle=mg;ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=5;
+  // Sol bıyık
+  ctx.beginPath();ctx.moveTo(0,-3);
+  ctx.bezierCurveTo(-mw*0.3,-15,-mw*0.5,-18,-mw*0.55,-10);
+  ctx.bezierCurveTo(-mw*0.45,2,-mw*0.2,5,0,3);
+  ctx.closePath();ctx.fill();
+  // Sağ bıyık
+  ctx.beginPath();ctx.moveTo(0,-3);
+  ctx.bezierCurveTo(mw*0.3,-15,mw*0.5,-18,mw*0.55,-10);
+  ctx.bezierCurveTo(mw*0.45,2,mw*0.2,5,0,3);
+  ctx.closePath();ctx.fill();
+  ctx.restore();
+}
+
+const fireParticles=[];
+function updateFireParticles(cx,cy,w,h){
+  for(let i=0;i<4;i++){
+    fireParticles.push({
+      x:cx+(Math.random()-0.5)*w*0.1,y:cy,
+      vx:(Math.random()-0.5)*3,vy:-(Math.random()*4+2),
+      life:1,maxLife:40+Math.random()*30,size:8+Math.random()*12
+    });
+  }
+  for(let i=fireParticles.length-1;i>=0;i--){
+    const p=fireParticles[i];
+    p.x+=p.vx;p.y+=p.vy;p.vx*=0.98;p.vy*=0.98;
+    p.life-=1/p.maxLife;
+    if(p.life<=0)fireParticles.splice(i,1);
+  }
+}
+function drawFire(ctx,lms,w,h,t){
+  const FH=lms[10];if(!FH)return;
+  const[fhx,fhy]=lm(FH,w,h);
+  updateFireParticles(fhx,fhy-30,w,h);
+  ctx.save();
+  for(const p of fireParticles){
+    const lifeRatio=p.life;
+    const alpha=lifeRatio;
+    const size=p.size*lifeRatio;
+    const col=lifeRatio>0.7?`rgba(255,${Math.round(100+155*lifeRatio)},0,${alpha})`:
+               lifeRatio>0.4?`rgba(255,${Math.round(50+100*(lifeRatio-0.4)/0.3)},0,${alpha})`:
+               `rgba(200,0,0,${alpha*0.5})`;
+    ctx.beginPath();ctx.arc(p.x,p.y,size,0,2*Math.PI);
+    ctx.fillStyle=col;ctx.shadowColor=col;ctx.shadowBlur=size*2;ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ══════════════════════════════════════════════
+//  STATE
+// ══════════════════════════════════════════════
+const video=document.getElementById('webcam');
+const canvas=document.getElementById('output_canvas');
+const ctx2d=canvas.getContext('2d');
+const settingsPanel=document.getElementById('settings_panel');
+const snapPanel=document.getElementById('snap_panel');
+const bd1=document.getElementById('backdrop1');
+const bd2=document.getElementById('backdrop2');
+const menuBtn=document.getElementById('menu_toggle');
+const snapBtn=document.getElementById('snap_toggle');
+const iconM=document.getElementById('icon_menu');
+const iconC=document.getElementById('icon_close');
+const modeSel=document.getElementById('mode_select');
+const upCont=document.getElementById('upload_container');
+const imgUp=document.getElementById('image_upload');
+const fnEl=document.getElementById('file_name');
+const slider=document.getElementById('scale_slider');
+const slVal=document.getElementById('scale_value');
+const intensitySlider=document.getElementById('effect_intensity');
+const intensityVal=document.getElementById('intensity_value');
 const cb=id=>document.getElementById(id);
 
 let overlayImg=null,pngScale=2.3;
 let faceLms=null,rHand=null,lHand=null;
 const ball={x:200,y:150};
+let frameCount=0;
 
 function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
 resizeCanvas();window.addEventListener('resize',resizeCanvas);
 
-// sidebar
-function openSB(){sidebar.classList.add('open');backdrop.classList.add('active');iconM.style.display='none';iconC.style.display='block';}
-function closeSB(){sidebar.classList.remove('open');backdrop.classList.remove('active');iconM.style.display='block';iconC.style.display='none';}
-menuBtn.addEventListener('click',()=>sidebar.classList.contains('open')?closeSB():openSB());
-backdrop.addEventListener('click',closeSB);
+// ── Panel Yönetimi ──
+function openSettings(){
+  settingsPanel.classList.add('open');bd1.classList.add('active');
+  iconM.style.display='none';iconC.style.display='block';
+  snapPanel.classList.remove('open');bd2.classList.remove('active');
+}
+function closeSettings(){
+  settingsPanel.classList.remove('open');bd1.classList.remove('active');
+  iconM.style.display='block';iconC.style.display='none';
+}
+function toggleSettings(){settingsPanel.classList.contains('open')?closeSettings():openSettings();}
 
+function toggleSnap(){
+  if(snapPanel.classList.contains('open')){
+    snapPanel.classList.remove('open');bd2.classList.remove('active');
+  }else{
+    snapPanel.classList.add('open');bd2.classList.add('active');
+    settingsPanel.classList.remove('open');bd1.classList.remove('active');
+    iconM.style.display='block';iconC.style.display='none';
+  }
+}
+
+menuBtn.addEventListener('click',toggleSettings);
+snapBtn.addEventListener('click',toggleSnap);
+bd1.addEventListener('click',closeSettings);
+bd2.addEventListener('click',()=>{snapPanel.classList.remove('open');bd2.classList.remove('active');});
+
+// ── Snap butonları ──
+document.querySelectorAll('.snap-btn').forEach(btn=>{
+  btn.addEventListener('click',()=>{
+    const eff=btn.dataset.effect;
+    if(activeEffect===eff){
+      activeEffect=null;btn.classList.remove('active');
+    }else{
+      document.querySelectorAll('.snap-btn').forEach(b=>b.classList.remove('active'));
+      activeEffect=eff;btn.classList.add('active');
+    }
+  });
+});
+
+intensitySlider.addEventListener('input',e=>{
+  effectIntensity=parseFloat(e.target.value);
+  intensityVal.textContent=effectIntensity.toFixed(1)+'×';
+});
+
+// ── Mode select ──
 modeSel.addEventListener('change',e=>{
   const v=e.target.value;
   if(v==='eyes'||v==='face_mask'){
@@ -397,30 +946,57 @@ imgUp.addEventListener('change',e=>{
 
 slider.addEventListener('input',e=>{pngScale=parseFloat(e.target.value);slVal.textContent=pngScale.toFixed(1)+'×';});
 
-// mediapipe
+// ── MediaPipe ──
 const holistic=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
 holistic.setOptions({modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:true,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
 holistic.onResults(r=>{faceLms=r.faceLandmarks||null;rHand=r.rightHandLandmarks||null;lHand=r.leftHandLandmarks||null;});
 
+// ── ANA DÖNGÜ ──
 function loop(){
   const W=canvas.width,H=canvas.height;
+  frameCount++;
   ctx2d.clearRect(0,0,W,H);
   if(video.readyState>=2)ctx2d.drawImage(video,0,0,W,H);
 
   const activeHand=rHand||lHand;
+  const t=frameCount*0.05;
+
+  // Snap efektleri (bazıları tüm frame'e uygulanır)
+  if(activeEffect==='glitch')drawGlitch(ctx2d,video,W,H);
+  if(activeEffect==='thermal'&&faceLms)drawThermal(ctx2d,faceLms,video,W,H);
 
   if(faceLms){
-    if(cb('toggle_blur').checked)   drawFaceBlur(ctx2d,faceLms,video,W,H);
-    if(cb('toggle_lips').checked)   drawLips(ctx2d,faceLms,W,H);
-    if(cb('toggle_cheeks').checked) drawCheeks(ctx2d,faceLms,W,H);
-    if(cb('toggle_eyes').checked)   drawEyes(ctx2d,faceLms,W,H);
+    if(cb('toggle_blur').checked)    drawFaceBlur(ctx2d,faceLms,video,W,H);
+    if(cb('toggle_lips').checked)    drawLips(ctx2d,faceLms,W,H);
+    if(cb('toggle_cheeks').checked)  drawCheeks(ctx2d,faceLms,W,H);
+    if(cb('toggle_eyes').checked)    drawEyes(ctx2d,faceLms,W,H);
     if(cb('toggle_forehead').checked)drawForehead(ctx2d,faceLms,W,H);
-    if(cb('toggle_chin').checked)   drawChin(ctx2d,faceLms,W,H);
-    if(cb('toggle_neck').checked)   drawNeck(ctx2d,faceLms,W,H);
+    if(cb('toggle_chin').checked)    drawChin(ctx2d,faceLms,W,H);
+    if(cb('toggle_neck').checked)    drawNeck(ctx2d,faceLms,W,H);
 
     const mode=modeSel.value;
-    if(mode==='eyes'&&overlayImg)     drawEyeMask(ctx2d,faceLms,overlayImg,W,H,pngScale);
+    if(mode==='eyes'&&overlayImg)          drawEyeMask(ctx2d,faceLms,overlayImg,W,H,pngScale);
     else if(mode==='face_mask'&&overlayImg)drawFaceMask(ctx2d,faceLms,overlayImg,W,H,pngScale);
+
+    // Snap efektleri (yüz üzerine)
+    switch(activeEffect){
+      case 'big_head':   drawBigHead(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'small_head': drawSmallHead(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'alien':      drawAlien(ctx2d,faceLms,W,H,effectIntensity);break;
+      case 'bald':       drawBald(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'fish_eye':   drawFishEye(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'wide_face':  drawWideFace(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'tall_face':  drawTallFace(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'squeeze':    drawSqueeze(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'rainbow':    drawRainbow(ctx2d,faceLms,W,H,t);break;
+      case 'ghost':      drawGhost(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'hearts':     drawHearts(ctx2d,faceLms,W,H,effectIntensity);break;
+      case 'sunglasses': drawSunglasses(ctx2d,faceLms,W,H,effectIntensity);break;
+      case 'beard':      drawBeard(ctx2d,faceLms,W,H,effectIntensity);break;
+      case 'crown':      drawCrown(ctx2d,faceLms,W,H,effectIntensity);break;
+      case 'mustache':   drawMustache(ctx2d,faceLms,W,H,effectIntensity);break;
+      case 'fire':       drawFire(ctx2d,faceLms,W,H,t);break;
+    }
   }
 
   if(cb('toggle_hands').checked){
