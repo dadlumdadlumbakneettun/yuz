@@ -3,10 +3,11 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Yüz Maskesi + Esnetme</title>
+  <title>Yüz Maskesi</title>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/@mediapipe/holistic/holistic.js" crossorigin="anonymous"></script>
   <style>
+/* ── RESET & BASE ───────────────────────────────── */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
   --sw:290px;
@@ -25,6 +26,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 #webcam{display:none!important}
 #output_canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transform:scaleX(-1);z-index:0}
 
+/* ── MENU BUTTON ────────────────────────────────── */
 #menu_toggle{
   position:fixed;top:20px;left:20px;z-index:300;
   width:44px;height:44px;border-radius:var(--r12);
@@ -38,17 +40,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 #menu_toggle:hover{background:rgba(0,229,255,0.12);box-shadow:0 0 0 1px var(--accent),0 4px 24px rgba(0,229,255,0.15)}
 #menu_toggle:active{transform:scale(0.94)}
 
-/* warp indicator */
-#warp_indicator{
-  position:fixed;bottom:24px;left:50%;transform:translateX(-50%);z-index:300;
-  padding:8px 18px;border-radius:99px;
-  background:rgba(0,229,255,0.15);border:1px solid rgba(0,229,255,0.35);
-  color:var(--accent);font-size:12px;font-weight:500;letter-spacing:.04em;
-  opacity:0;transition:opacity 0.4s;pointer-events:none;
-  backdrop-filter:blur(12px);
-}
-#warp_indicator.active{opacity:1}
-
+/* ── BACKDROP ───────────────────────────────────── */
 #sidebar_backdrop{
   position:fixed;inset:0;z-index:150;
   background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);
@@ -56,6 +48,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 }
 #sidebar_backdrop.active{opacity:1;pointer-events:all}
 
+/* ── SIDEBAR ────────────────────────────────────── */
 #sidebar{
   position:fixed;top:0;left:0;height:100vh;width:var(--sw);z-index:200;
   background:var(--bg-panel);
@@ -78,6 +71,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 .sec-lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 .sb-footer{padding:16px 20px;margin-top:auto;font-size:11px;color:var(--muted);line-height:1.5}
 
+/* ── SELECT ─────────────────────────────────────── */
 .sel{
   width:100%;background:var(--bg-sec);border:1px solid var(--border);
   border-radius:var(--r8);color:var(--txt);font-size:13px;padding:9px 12px;
@@ -88,6 +82,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 }
 .sel:hover,.sel:focus{border-color:var(--accent)}
 
+/* ── UPLOAD ─────────────────────────────────────── */
 .up-btn{
   display:inline-flex;align-items:center;gap:8px;
   background:var(--accent-dim);border:1px solid rgba(0,229,255,0.3);
@@ -106,6 +101,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 .rng::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 8px rgba(0,229,255,0.5)}
 .rng::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:none;box-shadow:0 0 8px rgba(0,229,255,0.5)}
 
+/* ── TOGGLE ROWS ────────────────────────────────── */
 .trow{display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 0;user-select:none;border-radius:var(--r8)}
 .trow:hover{background:rgba(255,255,255,0.03)}
 .tdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
@@ -123,21 +119,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 }
 .tcb:checked+.tsw{background:var(--accent-dim);border-color:rgba(0,229,255,0.4)}
 .tcb:checked+.tsw::after{transform:translateX(16px);background:var(--accent);box-shadow:0 0 6px rgba(0,229,255,0.6)}
-
-/* warp strength badge */
-.warp-badge{
-  display:inline-block;padding:2px 8px;border-radius:99px;font-size:11px;font-weight:600;
-  background:rgba(255,100,200,0.15);border:1px solid rgba(255,100,200,0.3);
-  color:#FF64C8;letter-spacing:.03em;
-}
   </style>
 </head>
 <body>
 
 <video id="webcam" autoplay playsinline muted></video>
 <canvas id="output_canvas"></canvas>
-
-<div id="warp_indicator">✦ Esnetme Aktif</div>
 
 <button id="menu_toggle" aria-label="Menü">
   <svg id="icon_menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -173,30 +160,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
       <span class="sl-lbl">Boyut</span>
       <input type="range" id="scale_slider" min="0.5" max="5.0" step="0.1" value="2.3" class="rng"/>
       <span id="scale_value" class="sl-val">2.3×</span>
-    </div>
-  </div>
-
-  <div class="sb-sec">
-    <div class="sec-lbl">Yüz Esnetme <span class="warp-badge">YENİ</span></div>
-    <label class="trow" for="toggle_warp">
-      <span class="tdot" style="background:#FF64C8;box-shadow:0 0 6px #FF64C8"></span>
-      <span class="ttxt">El ile Esnetme</span>
-      <input type="checkbox" id="toggle_warp" class="tcb" checked>
-      <span class="tsw"></span>
-    </label>
-    <div class="sl-row">
-      <span class="sl-lbl">Güç</span>
-      <input type="range" id="warp_strength" min="0.5" max="4.0" step="0.1" value="1.8" class="rng"/>
-      <span id="warp_strength_val" class="sl-val">1.8×</span>
-    </div>
-    <div class="sl-row">
-      <span class="sl-lbl">Yarıçap</span>
-      <input type="range" id="warp_radius" min="30" max="200" step="5" value="90" class="rng"/>
-      <span id="warp_radius_val" class="sl-val">90px</span>
-    </div>
-    <div style="font-size:11px;color:var(--muted);line-height:1.6;margin-top:2px">
-      İşaret parmağını yüzüne yaklaştır → esner.<br>
-      Kapatma yumruğu yap → serbest bırak.
     </div>
   </div>
 
@@ -251,124 +214,6 @@ const HAND_COLOR='#EC4899';
 const HAND_CONNECTIONS=[[0,1],[1,2],[2,3],[3,4],[0,5],[5,6],[6,7],[7,8],[5,9],[9,10],[10,11],[11,12],[9,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19],[19,20],[0,17]];
 
 // ════════════════════════════════════════════════════════════════
-//  FACE WARP ENGINE
-//  Mesh Displacement — her kareyi offscreen canvas'ta çizip
-//  işaret parmağı etkisini pixel-push ile uyguluyoruz.
-// ════════════════════════════════════════════════════════════════
-const warpCanvas = document.createElement('canvas');
-const warpCtx    = warpCanvas.getContext('2d', {willReadFrequently: true});
-
-// Smooth warp state per hand
-const warpState = {
-  active: false,
-  fingerX: 0, fingerY: 0,   // hedef parmak pozisyonu (ekran koordinatı)
-  smoothX: 0, smoothY: 0,   // yumuşatılmış parmak
-  pinched: false,
-  indicator: false,
-};
-
-function getFingerPos(handLms, W, H) {
-  if (!handLms) return null;
-  // index fingertip = 8
-  const tip = handLms[8];
-  if (!tip) return null;
-  // canvas scaleX(-1) yüzünden x'i ters çeviriyoruz
-  return { x: (1 - tip.x) * W, y: tip.y * H };
-}
-
-// Parmak yüze yakın mı kontrol et (face oval BBox)
-function isFingerNearFace(fx, fy, faceLms, W, H, radius) {
-  if (!faceLms) return false;
-  for (const idx of FACE_OVAL) {
-    const pt = faceLms[idx];
-    if (!pt) continue;
-    const px = (1 - pt.x) * W; // mirror
-    const py = pt.y * H;
-    if (Math.hypot(fx - px, fy - py) < radius * 2) return true;
-  }
-  return false;
-}
-
-// Parmak kapalı (yumruk) mı? — index tip ile index MCP mesafesi
-function isFingerClosed(handLms) {
-  if (!handLms) return true;
-  const tip = handLms[8];
-  const mcp = handLms[5];
-  if (!tip || !mcp) return true;
-  return Math.hypot(tip.x - mcp.x, tip.y - mcp.y) < 0.07;
-}
-
-/**
- * drawWarpedFace:
- *  1. Orijinal video karesini offscreen canvas'a çizer
- *  2. Parmak aktifse getImageData alır, displacement uygular, putImageData geri koyar
- *  3. Sonucu ana canvas'a çizer
- */
-function drawWarpedFace(destCtx, video, W, H, fingerX, fingerY, warpStr, warpRad) {
-  warpCanvas.width  = W;
-  warpCanvas.height = H;
-
-  // 1) Videoyu offscreen'e çiz (mirror zaten CSS'te, burada çizerken normal)
-  warpCtx.save();
-  warpCtx.scale(-1, 1);
-  warpCtx.drawImage(video, -W, 0, W, H);
-  warpCtx.restore();
-
-  // 2) Pixel displacement
-  const src  = warpCtx.getImageData(0, 0, W, H);
-  const dst  = warpCtx.createImageData(W, H);
-  const sD   = src.data;
-  const dD   = dst.data;
-  const r    = warpRad;
-  const r2   = r * r;
-  const str  = warpStr;
-
-  // Parmak mirror koordinatı (canvas çizimi mirror değil, parmak mirror'da)
-  // fingerX canvas üzerinde mirror'lı → offscreen (normal) koordinata dönüştür
-  const fx = W - fingerX;
-  const fy = fingerY;
-
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      const dx = x - fx;
-      const dy = y - fy;
-      const dist2 = dx * dx + dy * dy;
-
-      let sx = x, sy = y;
-
-      if (dist2 < r2) {
-        const dist = Math.sqrt(dist2);
-        // Smooth falloff: cosine eğrisi
-        const t = Math.cos((dist / r) * Math.PI * 0.5);
-        // Kaynak piksel: parmaktan uzağa doğru çekme
-        const pull = t * t * str;
-        sx = x - dx * pull * 0.08;
-        sy = y - dy * pull * 0.08;
-      }
-
-      // Sınır kontrolü
-      sx = Math.max(0, Math.min(W - 1, sx | 0));
-      sy = Math.max(0, Math.min(H - 1, sy | 0));
-
-      const si = (sy * W + sx) * 4;
-      const di = (y  * W + x ) * 4;
-      dD[di]   = sD[si];
-      dD[di+1] = sD[si+1];
-      dD[di+2] = sD[si+2];
-      dD[di+3] = sD[si+3];
-    }
-  }
-
-  warpCtx.putImageData(dst, 0, 0);
-
-  // 3) Sonucu ana canvas'a çiz (normal, mirror CSS'te yapılıyor)
-  destCtx.save();
-  destCtx.scale(-1, 1);
-  destCtx.drawImage(warpCanvas, -W, 0, W, H);
-  destCtx.restore();
-}
-
-// ════════════════════════════════════════════════════════════════
 //  DRAW HELPERS
 // ════════════════════════════════════════════════════════════════
 function lm(pt,w,h){return[pt.x*w,pt.y*h]}
@@ -404,6 +249,7 @@ function drawLips(ctx,lms,w,h){
   for(const p of LIPS.paths){polyline(ctx,lms,p,w,h,false);ctx.stroke();}
   ctx.restore();
 }
+
 function drawCheeks(ctx,lms,w,h){
   ctx.save();glow(ctx,CHEEKS.color,1.5,8);
   polyline(ctx,lms,CHEEKS.leftPath,w,h,false);ctx.stroke();
@@ -413,6 +259,7 @@ function drawCheeks(ctx,lms,w,h){
   polyline(ctx,lms,CHEEKS.rightPath,w,h,true);ctx.fill();
   ctx.restore();
 }
+
 function drawEyes(ctx,lms,w,h){
   ctx.save();glow(ctx,EYES.color,1.5,10);
   const drawEye=e=>{
@@ -429,6 +276,7 @@ function drawEyes(ctx,lms,w,h){
   drawEye(EYES.left);drawEye(EYES.right);
   ctx.restore();
 }
+
 function drawForehead(ctx,lms,w,h){
   ctx.save();glow(ctx,FOREHEAD.color,1.5,8);
   polyline(ctx,lms,FOREHEAD.browLeft,w,h,false);ctx.stroke();
@@ -437,11 +285,13 @@ function drawForehead(ctx,lms,w,h){
   polyline(ctx,lms,FOREHEAD.topLine,w,h,false);ctx.stroke();
   ctx.restore();
 }
+
 function drawChin(ctx,lms,w,h){
   ctx.save();glow(ctx,CHIN.color,1.8,8);
   polyline(ctx,lms,CHIN.path,w,h,false);ctx.stroke();
   ctx.restore();
 }
+
 function drawNeck(ctx,lms,w,h){
   const cc=lms[152],lj=lms[172],rj=lms[397];
   if(!cc||!lj||!rj)return;
@@ -456,6 +306,7 @@ function drawNeck(ctx,lms,w,h){
   ctx.beginPath();ctx.moveTo(llx-10,lly+nd);ctx.lineTo(rlx+10,rly+nd);ctx.stroke();
   ctx.restore();
 }
+
 function drawHands(ctx,hl,w,h){
   if(!hl)return;
   ctx.save();glow(ctx,HAND_COLOR,2.5,10);
@@ -467,6 +318,7 @@ function drawHands(ctx,hl,w,h){
   for(const pt of hl){const[x,y]=lm(pt,w,h);ctx.beginPath();ctx.arc(x,y,3.5,0,2*Math.PI);ctx.fill();}
   ctx.restore();
 }
+
 function drawEyeMask(ctx,lms,img,w,h,sc){
   const L=lms[33],R=lms[263];if(!L||!R||!img)return;
   const[x1,y1]=lm(L,w,h),[x2,y2]=lm(R,w,h);
@@ -474,6 +326,7 @@ function drawEyeMask(ctx,lms,img,w,h,sc){
   const iw=d*sc,ih=iw*(img.height/img.width);
   ctx.save();ctx.translate(cx,cy);ctx.rotate(a);ctx.drawImage(img,-iw/2,-ih/2,iw,ih);ctx.restore();
 }
+
 function drawFaceMask(ctx,lms,img,w,h,sc){
   const LC=lms[234],RC=lms[454],FH=lms[10],CN=lms[152];if(!LC||!RC||!FH||!CN||!img)return;
   const[x1,y1]=lm(LC,w,h),[x2,y2]=lm(RC,w,h);
@@ -481,6 +334,7 @@ function drawFaceMask(ctx,lms,img,w,h,sc){
   const iw=d*sc,ih=iw*(img.height/img.width);
   ctx.save();ctx.translate(cx,cy);ctx.rotate(a);ctx.drawImage(img,-iw/2,-ih/2,iw,ih);ctx.restore();
 }
+
 function drawNeonBall(ctx,state,hl,w,h){
   if(hl&&hl[8]){const t=hl[8];state.x+=(t.x*w-state.x)*0.2;state.y+=(t.y*h-state.y)*0.2;}
   ctx.save();
@@ -492,68 +346,33 @@ function drawNeonBall(ctx,state,hl,w,h){
   ctx.restore();
 }
 
-// Parmak izi görsel efekti (warp aktifken)
-function drawWarpCursor(ctx, x, y, radius, active) {
-  ctx.save();
-  const alpha = active ? 0.9 : 0.4;
-  ctx.globalAlpha = alpha;
-  // Halka
-  ctx.beginPath();ctx.arc(x, y, radius, 0, 2*Math.PI);
-  ctx.strokeStyle = '#FF64C8';ctx.lineWidth = 2;
-  ctx.shadowColor = '#FF64C8';ctx.shadowBlur = 12;
-  ctx.stroke();
-  // İç nokta
-  ctx.beginPath();ctx.arc(x, y, 5, 0, 2*Math.PI);
-  ctx.fillStyle = '#FF64C8';ctx.shadowBlur = 8;ctx.fill();
-  // Kesikli çizgiler (4 yön)
-  ctx.setLineDash([4,4]);ctx.lineWidth=1;ctx.shadowBlur=0;
-  const d = radius + 12;
-  ctx.beginPath();ctx.moveTo(x,y-d);ctx.lineTo(x,y-radius+4);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(x,y+d);ctx.lineTo(x,y+radius-4);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(x-d,y);ctx.lineTo(x-radius+4,y);ctx.stroke();
-  ctx.beginPath();ctx.moveTo(x+d,y);ctx.lineTo(x+radius-4,y);ctx.stroke();
-  ctx.restore();
-}
-
 // ════════════════════════════════════════════════════════════════
 //  MAIN
 // ════════════════════════════════════════════════════════════════
-const video   = document.getElementById('webcam');
-const canvas  = document.getElementById('output_canvas');
-const ctx2d   = canvas.getContext('2d');
-const sidebar = document.getElementById('sidebar');
-const backdrop= document.getElementById('sidebar_backdrop');
-const menuBtn = document.getElementById('menu_toggle');
-const iconM   = document.getElementById('icon_menu');
-const iconC   = document.getElementById('icon_close');
-const modeSel = document.getElementById('mode_select');
-const upCont  = document.getElementById('upload_container');
-const imgUp   = document.getElementById('image_upload');
-const fnEl    = document.getElementById('file_name');
-const slider  = document.getElementById('scale_slider');
-const slVal   = document.getElementById('scale_value');
-const warpIndEl = document.getElementById('warp_indicator');
-const cb = id => document.getElementById(id);
+const video   =document.getElementById('webcam');
+const canvas  =document.getElementById('output_canvas');
+const ctx2d   =canvas.getContext('2d');
+const sidebar =document.getElementById('sidebar');
+const backdrop=document.getElementById('sidebar_backdrop');
+const menuBtn =document.getElementById('menu_toggle');
+const iconM   =document.getElementById('icon_menu');
+const iconC   =document.getElementById('icon_close');
+const modeSel =document.getElementById('mode_select');
+const upCont  =document.getElementById('upload_container');
+const imgUp   =document.getElementById('image_upload');
+const fnEl    =document.getElementById('file_name');
+const slider  =document.getElementById('scale_slider');
+const slVal   =document.getElementById('scale_value');
+const cb=id=>document.getElementById(id);
 
-let overlayImg = null, pngScale = 2.3;
-let faceLms = null, rHand = null, lHand = null;
-const ball = {x:200,y:150};
-
-// Warp params
-let warpStr = 1.8, warpRad = 90;
-
-cb('warp_strength').addEventListener('input', e => {
-  warpStr = parseFloat(e.target.value);
-  cb('warp_strength_val').textContent = warpStr.toFixed(1) + '×';
-});
-cb('warp_radius').addEventListener('input', e => {
-  warpRad = parseInt(e.target.value);
-  cb('warp_radius_val').textContent = warpRad + 'px';
-});
+let overlayImg=null,pngScale=2.3;
+let faceLms=null,rHand=null,lHand=null;
+const ball={x:200,y:150};
 
 function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
 resizeCanvas();window.addEventListener('resize',resizeCanvas);
 
+// sidebar
 function openSB(){sidebar.classList.add('open');backdrop.classList.add('active');iconM.style.display='none';iconC.style.display='block';}
 function closeSB(){sidebar.classList.remove('open');backdrop.classList.remove('active');iconM.style.display='block';iconC.style.display='none';}
 menuBtn.addEventListener('click',()=>sidebar.classList.contains('open')?closeSB():openSB());
@@ -578,71 +397,29 @@ imgUp.addEventListener('change',e=>{
 
 slider.addEventListener('input',e=>{pngScale=parseFloat(e.target.value);slVal.textContent=pngScale.toFixed(1)+'×';});
 
-// ─── holistic
+// mediapipe
 const holistic=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
 holistic.setOptions({modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:true,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
-holistic.onResults(r=>{
-  faceLms=r.faceLandmarks||null;
-  rHand=r.rightHandLandmarks||null;
-  lHand=r.leftHandLandmarks||null;
-});
-
-// ─── RENDER LOOP
-let warpActive = false;
-let warpSmoothX = 0, warpSmoothY = 0;
+holistic.onResults(r=>{faceLms=r.faceLandmarks||null;rHand=r.rightHandLandmarks||null;lHand=r.leftHandLandmarks||null;});
 
 function loop(){
   const W=canvas.width,H=canvas.height;
   ctx2d.clearRect(0,0,W,H);
+  if(video.readyState>=2)ctx2d.drawImage(video,0,0,W,H);
 
-  const warpEnabled = cb('toggle_warp').checked;
-  const activeHand  = rHand || lHand;
-
-  // ── Warp hesapla
-  let doWarp = false;
-  let fingerX = 0, fingerY = 0;
-
-  if (warpEnabled && activeHand && faceLms && video.readyState >= 2) {
-    const fp = getFingerPos(activeHand, W, H);
-    if (fp) {
-      const closed = isFingerClosed(activeHand);
-      const nearFace = isFingerNearFace(fp.x, fp.y, faceLms, W, H, warpRad);
-
-      if (!closed && nearFace) {
-        warpSmoothX += (fp.x - warpSmoothX) * 0.25;
-        warpSmoothY += (fp.y - warpSmoothY) * 0.25;
-        doWarp = true;
-        fingerX = warpSmoothX;
-        fingerY = warpSmoothY;
-      }
-    }
-  }
-
-  // Gösterge
-  if (doWarp !== warpActive) {
-    warpActive = doWarp;
-    warpIndEl.classList.toggle('active', warpActive);
-  }
-
-  // ── Çizim
-  if (doWarp) {
-    drawWarpedFace(ctx2d, video, W, H, fingerX, fingerY, warpStr, warpRad);
-  } else {
-    // Normal video (mirror CSS'te)
-    if(video.readyState>=2) ctx2d.drawImage(video,0,0,W,H);
-  }
+  const activeHand=rHand||lHand;
 
   if(faceLms){
-    if(cb('toggle_blur').checked)    drawFaceBlur(ctx2d,faceLms,video,W,H);
-    if(cb('toggle_lips').checked)    drawLips(ctx2d,faceLms,W,H);
-    if(cb('toggle_cheeks').checked)  drawCheeks(ctx2d,faceLms,W,H);
-    if(cb('toggle_eyes').checked)    drawEyes(ctx2d,faceLms,W,H);
+    if(cb('toggle_blur').checked)   drawFaceBlur(ctx2d,faceLms,video,W,H);
+    if(cb('toggle_lips').checked)   drawLips(ctx2d,faceLms,W,H);
+    if(cb('toggle_cheeks').checked) drawCheeks(ctx2d,faceLms,W,H);
+    if(cb('toggle_eyes').checked)   drawEyes(ctx2d,faceLms,W,H);
     if(cb('toggle_forehead').checked)drawForehead(ctx2d,faceLms,W,H);
-    if(cb('toggle_chin').checked)    drawChin(ctx2d,faceLms,W,H);
-    if(cb('toggle_neck').checked)    drawNeck(ctx2d,faceLms,W,H);
+    if(cb('toggle_chin').checked)   drawChin(ctx2d,faceLms,W,H);
+    if(cb('toggle_neck').checked)   drawNeck(ctx2d,faceLms,W,H);
 
     const mode=modeSel.value;
-    if(mode==='eyes'&&overlayImg)         drawEyeMask(ctx2d,faceLms,overlayImg,W,H,pngScale);
+    if(mode==='eyes'&&overlayImg)     drawEyeMask(ctx2d,faceLms,overlayImg,W,H,pngScale);
     else if(mode==='face_mask'&&overlayImg)drawFaceMask(ctx2d,faceLms,overlayImg,W,H,pngScale);
   }
 
@@ -651,14 +428,6 @@ function loop(){
     if(lHand)drawHands(ctx2d,lHand,W,H);
   }
   if(cb('toggle_neon').checked)drawNeonBall(ctx2d,ball,activeHand,W,H);
-
-  // Warp cursor — CSS mirror'ı hesaba kataralım
-  if (warpEnabled && activeHand) {
-    const fp = getFingerPos(activeHand, W, H);
-    if (fp) {
-      drawWarpCursor(ctx2d, fp.x, fp.y, warpRad, doWarp);
-    }
-  }
 
   requestAnimationFrame(loop);
 }
