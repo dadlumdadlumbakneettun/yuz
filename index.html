@@ -27,7 +27,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 #webcam{display:none!important}
 #output_canvas{position:fixed;inset:0;width:100vw;height:100vh;object-fit:cover;transform:scaleX(-1);z-index:0}
 
-/* ── BUTTONS ── */
 .fab{
   position:fixed;left:20px;z-index:300;
   width:44px;height:44px;border-radius:var(--r12);
@@ -44,7 +43,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 .fab:active{transform:scale(0.94)}
 #snap_toggle:hover{background:rgba(255,107,53,0.15);box-shadow:0 0 0 1px var(--snap),0 4px 24px rgba(255,107,53,0.2)}
 
-/* ── BACKDROP ── */
 .sb-backdrop{
   position:fixed;inset:0;z-index:150;
   background:rgba(0,0,0,0.55);backdrop-filter:blur(3px);
@@ -52,7 +50,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 }
 .sb-backdrop.active{opacity:1;pointer-events:all}
 
-/* ── SIDEBARS ── */
 .sidebar{
   position:fixed;top:0;left:0;height:100vh;width:var(--sw);z-index:200;
   background:var(--bg-panel);
@@ -76,7 +73,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 .sec-lbl{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
 .sb-footer{padding:16px 20px;margin-top:auto;font-size:11px;color:var(--muted);line-height:1.5}
 
-/* ── SELECT ── */
 .sel{
   width:100%;background:var(--bg-sec);border:1px solid var(--border);
   border-radius:var(--r8);color:var(--txt);font-size:13px;padding:9px 12px;
@@ -87,7 +83,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 }
 .sel:hover,.sel:focus{border-color:var(--accent)}
 
-/* ── UPLOAD ── */
 .up-btn{
   display:inline-flex;align-items:center;gap:8px;
   background:var(--accent-dim);border:1px solid rgba(0,229,255,0.3);
@@ -106,7 +101,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 .rng::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;box-shadow:0 0 8px rgba(0,229,255,0.5)}
 .rng::-moz-range-thumb{width:14px;height:14px;border-radius:50%;background:var(--accent);cursor:pointer;border:none;box-shadow:0 0 8px rgba(0,229,255,0.5)}
 
-/* ── TOGGLE ROWS ── */
 .trow{display:flex;align-items:center;gap:10px;cursor:pointer;padding:6px 0;user-select:none;border-radius:var(--r8)}
 .trow:hover{background:rgba(255,255,255,0.03)}
 .tdot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
@@ -125,7 +119,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 .tcb:checked+.tsw{background:var(--accent-dim);border-color:rgba(0,229,255,0.4)}
 .tcb:checked+.tsw::after{transform:translateX(16px);background:var(--accent);box-shadow:0 0 6px rgba(0,229,255,0.6)}
 
-/* ── SNAP EFFECT BUTTONS ── */
 .snap-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 .snap-btn{
   background:var(--snap-dim);border:1px solid rgba(255,107,53,0.25);
@@ -137,7 +130,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 .snap-btn .snap-icon{font-size:20px;display:block;margin-bottom:4px}
 .snap-btn:hover{background:rgba(255,107,53,0.25);border-color:var(--snap);box-shadow:0 0 0 1px var(--snap)}
 .snap-btn.active{background:rgba(255,107,53,0.35);border-color:var(--snap);box-shadow:0 0 0 1px var(--snap),0 0 12px rgba(255,107,53,0.3)}
-.snap-intensity{padding:4px 0 0}
   </style>
 </head>
 <body>
@@ -145,7 +137,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 <video id="webcam" autoplay playsinline muted></video>
 <canvas id="output_canvas"></canvas>
 
-<!-- Ayarlar Butonu -->
 <button id="menu_toggle" class="fab" aria-label="Ayarlar Menüsü">
   <svg id="icon_menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/>
@@ -155,7 +146,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
   </svg>
 </button>
 
-<!-- Snap Efektleri Butonu -->
 <button id="snap_toggle" class="fab" aria-label="Snap Efektleri">
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
     <path d="M12 2l2.4 7.4H22l-6.2 4.5 2.4 7.4L12 17l-6.2 4.3 2.4-7.4L2 9.4h7.6z"/>
@@ -165,7 +155,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
 <!-- Ana Ayarlar Paneli -->
 <aside id="settings_panel" class="sidebar">
   <div class="sb-header"><span class="sb-title">Ayarlar</span></div>
-
   <div class="sb-sec">
     <div class="sec-lbl">Maske Modu</div>
     <select id="mode_select" class="sel">
@@ -175,7 +164,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
       <option value="face_mask">Yüz Maskesi (PNG)</option>
     </select>
   </div>
-
   <div id="upload_container" class="sb-sec hidden">
     <div class="sec-lbl">Görsel</div>
     <label for="image_upload" class="up-btn">
@@ -190,7 +178,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
       <span id="scale_value" class="sl-val">2.3×</span>
     </div>
   </div>
-
   <div class="sb-sec">
     <div class="sec-lbl">Yüz Bölgeleri</div>
     <label class="trow" for="toggle_lips">   <span class="tdot" style="background:#EF4444;box-shadow:0 0 6px #EF4444"></span><span class="ttxt">Dudaklar</span>  <input type="checkbox" id="toggle_lips"     class="tcb"><span class="tsw"></span></label>
@@ -201,13 +188,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
     <label class="trow" for="toggle_neck">   <span class="tdot" style="background:#A855F7;box-shadow:0 0 6px #A855F7"></span><span class="ttxt">Boyun</span>     <input type="checkbox" id="toggle_neck"     class="tcb"><span class="tsw"></span></label>
     <label class="trow" for="toggle_hands">  <span class="tdot" style="background:#EC4899;box-shadow:0 0 6px #EC4899"></span><span class="ttxt">Eller</span>     <input type="checkbox" id="toggle_hands"    class="tcb"><span class="tsw"></span></label>
   </div>
-
   <div class="sb-sec">
     <div class="sec-lbl">Efektler</div>
     <label class="trow" for="toggle_blur"><span class="tdot" style="background:#F59E0B;box-shadow:0 0 6px #F59E0B"></span><span class="ttxt">Yüzü Bulanıklaştır</span><input type="checkbox" id="toggle_blur" class="tcb"><span class="tsw"></span></label>
     <label class="trow" for="toggle_neon"><span class="tdot" style="background:#00E5FF;box-shadow:0 0 6px #00E5FF"></span><span class="ttxt">Neon Top (Parmak)</span>  <input type="checkbox" id="toggle_neon" class="tcb" checked><span class="tsw"></span></label>
   </div>
-
   <div class="sb-footer">Kamera otomatik başlar · Hiçbir veri gönderilmez</div>
 </aside>
 
@@ -220,7 +205,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
     <div class="snap-grid">
       <button class="snap-btn" data-effect="big_head"><span class="snap-icon">🔵</span>Büyük Kafa</button>
       <button class="snap-btn" data-effect="small_head"><span class="snap-icon">🔹</span>Küçük Kafa</button>
-      <button class="snap-btn" data-effect="alien"><span class="snap-icon">👽</span>Uzaylı</button>
+      <button class="snap-btn" data-effect="alien"><span class="snap-icon">👽</span>Uzaylı Kafa</button>
       <button class="snap-btn" data-effect="bald"><span class="snap-icon">🥚</span>Kel</button>
     </div>
   </div>
@@ -238,32 +223,31 @@ html,body{width:100%;height:100%;overflow:hidden;background:#07070f;color:var(--
   <div class="sb-sec">
     <div class="sec-lbl">Renk & Görünüm</div>
     <div class="snap-grid">
-      <button class="snap-btn" data-effect="rainbow"><span class="snap-icon">🌈</span>Gökkuşağı</button>
       <button class="snap-btn" data-effect="thermal"><span class="snap-icon">🌡️</span>Termal</button>
       <button class="snap-btn" data-effect="ghost"><span class="snap-icon">👻</span>Hayalet</button>
       <button class="snap-btn" data-effect="glitch"><span class="snap-icon">⚡</span>Glitch</button>
+      <button class="snap-btn" data-effect="xray"><span class="snap-icon">🩻</span>X-Ray</button>
+      <button class="snap-btn" data-effect="neon_face"><span class="snap-icon">💜</span>Neon Mor</button>
+      <button class="snap-btn" data-effect="gold"><span class="snap-icon">🥇</span>Altın</button>
+      <button class="snap-btn" data-effect="comic"><span class="snap-icon">🎨</span>Çizgi Roman</button>
+      <button class="snap-btn" data-effect="inverted"><span class="snap-icon">🔄</span>Negatif</button>
+      <button class="snap-btn" data-effect="vintage"><span class="snap-icon">📷</span>Vintage</button>
+      <button class="snap-btn" data-effect="lava"><span class="snap-icon">🌋</span>Lav</button>
     </div>
   </div>
 
   <div class="sb-sec">
-    <div class="sec-lbl">Ekstra</div>
+    <div class="sec-lbl">Güneş Gözlüğü</div>
     <div class="snap-grid">
-      <button class="snap-btn" data-effect="hearts"><span class="snap-icon">❤️</span>Kalp Gözler</button>
       <button class="snap-btn" data-effect="sunglasses"><span class="snap-icon">🕶️</span>Güneş Gözlüğü</button>
-      <button class="snap-btn" data-effect="beard"><span class="snap-icon">🧔</span>Sakal</button>
-      <button class="snap-btn" data-effect="crown"><span class="snap-icon">👑</span>Taç</button>
-    </div>
-    <div class="snap-grid" style="margin-top:4px">
-      <button class="snap-btn" data-effect="mustache"><span class="snap-icon">👨</span>Bıyık</button>
-      <button class="snap-btn" data-effect="fire"><span class="snap-icon">🔥</span>Ateş</button>
     </div>
   </div>
 
-  <div class="sb-sec snap-intensity">
+  <div class="sb-sec">
     <div class="sec-lbl">Yoğunluk</div>
     <div class="sl-row">
       <span class="sl-lbl">Güç</span>
-      <input type="range" id="effect_intensity" min="0.1" max="2.0" step="0.1" value="1.0" class="rng" style="--accent:#FF6B35"/>
+      <input type="range" id="effect_intensity" min="0.1" max="2.0" step="0.1" value="1.0" class="rng"/>
       <span id="intensity_value" class="sl-val">1.0×</span>
     </div>
   </div>
@@ -307,10 +291,18 @@ function polyline(ctx,lms,idx,w,h,close=false){
 }
 function glow(ctx,color,lw=1.5,blur=7){ctx.strokeStyle=color;ctx.lineWidth=lw;ctx.shadowColor=color;ctx.shadowBlur=blur;}
 
+function clipToFace(ctx,lms,w,h){
+  ctx.beginPath();
+  for(let i=0;i<FACE_OVAL.length;i++){
+    const pt=lms[FACE_OVAL[i]];if(!pt)continue;
+    const[x,y]=lm(pt,w,h);
+    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+  }
+  ctx.closePath();ctx.clip();
+}
+
 function drawFaceBlur(ctx,lms,video,w,h){
-  ctx.save();ctx.beginPath();
-  for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
-  ctx.closePath();ctx.clip();ctx.filter='blur(22px)';
+  ctx.save();clipToFace(ctx,lms,w,h);ctx.filter='blur(22px)';
   if(video.readyState>=2)ctx.drawImage(video,0,0,w,h);
   ctx.restore();
 }
@@ -393,313 +385,294 @@ function drawNeonBall(ctx,state,hl,w,h){
 // ══════════════════════════════════════════════
 let activeEffect=null;
 let effectIntensity=1.0;
-let glitchOffset=0;
-let glitchTimer=0;
-const particles=[];
+let glitchOffset=0,glitchTimer=0;
 
 function getFaceBounds(lms,w,h){
   const FH=lms[10],CN=lms[152],LC=lms[234],RC=lms[454];
   if(!FH||!CN||!LC||!RC)return null;
-  const[fhx,fhy]=lm(FH,w,h);
-  const[cnx,cny]=lm(CN,w,h);
-  const[lcx,lcy]=lm(LC,w,h);
-  const[rcx,rcy]=lm(RC,w,h);
+  const[fhx,fhy]=lm(FH,w,h);const[cnx,cny]=lm(CN,w,h);
+  const[lcx,lcy]=lm(LC,w,h);const[rcx,rcy]=lm(RC,w,h);
   const cx=(lcx+rcx)/2,cy=(fhy+cny)/2;
   const faceW=Math.hypot(rcx-lcx,rcy-lcy);
   const faceH=Math.hypot(cnx-fhx,cny-fhy);
   const angle=Math.atan2(rcy-lcy,rcx-lcx);
   return{cx,cy,faceW,faceH,angle,fhx,fhy,cnx,cny,lcx,lcy,rcx,rcy};
 }
-
 function getIrisCenter(lms,irisIdx,w,h){
   const pts=irisIdx.map(i=>lms[i]).filter(Boolean);
   if(!pts.length)return null;
   return[pts.reduce((s,p)=>s+p.x*w,0)/pts.length,pts.reduce((s,p)=>s+p.y*h,0)/pts.length];
 }
-
 function getIrisRadius(lms,irisIdx,w,h){
   const pts=irisIdx.map(i=>lms[i]).filter(Boolean);
   if(pts.length<4)return 10;
   return Math.hypot(pts[1].x*w-pts[3].x*w,pts[1].y*h-pts[3].y*h)/2;
 }
 
+// ── Kafa Efektleri ──
 function drawBigHead(ctx,lms,video,w,h,intensity){
   const b=getFaceBounds(lms,w,h);if(!b)return;
   const scale=1+0.6*intensity;
   ctx.save();
-  ctx.translate(b.cx,b.cy);
-  ctx.rotate(b.angle);
-  ctx.scale(scale,scale);
-  ctx.rotate(-b.angle);
-  ctx.translate(-b.cx,-b.cy);
-  if(video.readyState>=2){
-    ctx.beginPath();
-    for(let i=0;i<FACE_OVAL.length;i++){
-      const pt=lms[FACE_OVAL[i]];if(!pt)continue;
-      const[x,y]=lm(pt,w,h);
-      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-    }
-    ctx.closePath();ctx.clip();
-    ctx.drawImage(video,0,0,w,h);
-  }
+  ctx.translate(b.cx,b.cy);ctx.rotate(b.angle);ctx.scale(scale,scale);ctx.rotate(-b.angle);ctx.translate(-b.cx,-b.cy);
+  if(video.readyState>=2){clipToFace(ctx,lms,w,h);ctx.drawImage(video,0,0,w,h);}
   ctx.restore();
 }
-
 function drawSmallHead(ctx,lms,video,w,h,intensity){
   const b=getFaceBounds(lms,w,h);if(!b)return;
   const scale=Math.max(0.3,1-0.45*intensity);
   ctx.save();
-  // Önce yüzü arka planla örtelim
-  ctx.beginPath();
-  for(let i=0;i<FACE_OVAL.length;i++){
-    const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);
-    i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-  }
+  // erase face region first
+  ctx.beginPath();for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
   ctx.closePath();ctx.fillStyle='#07070f';ctx.fill();
   ctx.translate(b.cx,b.cy);ctx.rotate(b.angle);ctx.scale(scale,scale);ctx.rotate(-b.angle);ctx.translate(-b.cx,-b.cy);
-  if(video.readyState>=2){
-    ctx.beginPath();
-    for(let i=0;i<FACE_OVAL.length;i++){
-      const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);
-      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
-    }
-    ctx.closePath();ctx.clip();ctx.drawImage(video,0,0,w,h);
-  }
+  if(video.readyState>=2){clipToFace(ctx,lms,w,h);ctx.drawImage(video,0,0,w,h);}
   ctx.restore();
 }
 
-function drawAlien(ctx,lms,w,h,intensity){
+// Uzaylı: sadece kafanın üstünü şişirir (video tabanlı, sadece boyut değişimi)
+function drawAlien(ctx,lms,video,w,h,intensity){
   const b=getFaceBounds(lms,w,h);if(!b)return;
+  // Kafanın üstünü dikey olarak büyüt, alt kısım (çene) sabit kalsın
+  const scaleY=1+0.7*intensity;
+  // anchor: çene noktası sabit, alın yukarı doğru uzasın
   ctx.save();
-  // Uzun kafa oval
-  ctx.translate(b.cx,b.fhy-b.faceH*0.2*intensity);
-  ctx.scale(1,1+0.5*intensity);
-  ctx.beginPath();
-  ctx.ellipse(0,0,b.faceW*0.5,b.faceH*0.55,b.angle,0,2*Math.PI);
-  const g=ctx.createRadialGradient(0,-10,5,0,0,b.faceW*0.5);
-  g.addColorStop(0,'rgba(100,230,100,0.5)');
-  g.addColorStop(1,'rgba(20,80,20,0.85)');
-  ctx.fillStyle=g;ctx.fill();
-  ctx.strokeStyle='rgba(0,255,120,0.7)';ctx.lineWidth=2;ctx.shadowColor='#00ff88';ctx.shadowBlur=15;ctx.stroke();
-  ctx.restore();
-
-  // Büyük gözler
-  const lIris=getIrisCenter(lms,EYES.left.iris,w,h);
-  const rIris=getIrisCenter(lms,EYES.right.iris,w,h);
-  const lR=getIrisRadius(lms,EYES.left.iris,w,h)*2.5*intensity;
-  const rR=getIrisRadius(lms,EYES.right.iris,w,h)*2.5*intensity;
-  ctx.save();
-  if(lIris){
-    const gL=ctx.createRadialGradient(lIris[0],lIris[1],0,lIris[0],lIris[1],lR);
-    gL.addColorStop(0,'#000');gL.addColorStop(0.4,'#003300');gL.addColorStop(1,'rgba(0,150,50,0.8)');
-    ctx.beginPath();ctx.ellipse(lIris[0],lIris[1],lR,lR*1.3,b.angle,0,2*Math.PI);
-    ctx.fillStyle=gL;ctx.fill();ctx.strokeStyle='rgba(0,255,100,0.9)';ctx.lineWidth=1.5;ctx.shadowColor='#00ff80';ctx.shadowBlur=12;ctx.stroke();
-  }
-  if(rIris){
-    const gR=ctx.createRadialGradient(rIris[0],rIris[1],0,rIris[0],rIris[1],rR);
-    gR.addColorStop(0,'#000');gR.addColorStop(0.4,'#003300');gR.addColorStop(1,'rgba(0,150,50,0.8)');
-    ctx.beginPath();ctx.ellipse(rIris[0],rIris[1],rR,rR*1.3,b.angle,0,2*Math.PI);
-    ctx.fillStyle=gR;ctx.fill();ctx.strokeStyle='rgba(0,255,100,0.9)';ctx.lineWidth=1.5;ctx.shadowColor='#00ff80';ctx.shadowBlur=12;ctx.stroke();
-  }
+  ctx.beginPath();for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
+  ctx.closePath();ctx.fillStyle='#07070f';ctx.fill();
+  // Pivot: çene merkezi
+  const pivotX=b.cnx,pivotY=b.cny;
+  ctx.translate(pivotX,pivotY);
+  ctx.rotate(b.angle);
+  ctx.scale(1,scaleY);
+  ctx.rotate(-b.angle);
+  ctx.translate(-pivotX,-pivotY);
+  if(video.readyState>=2){clipToFace(ctx,lms,w,h);ctx.drawImage(video,0,0,w,h);}
   ctx.restore();
 }
 
 function drawBald(ctx,lms,video,w,h,intensity){
   const FH=lms[10],LC=lms[234],RC=lms[454];if(!FH||!LC||!RC)return;
   const[fhx,fhy]=lm(FH,w,h);
-  const[lcx,lcy]=lm(LC,w,h);
-  const[rcx,rcy]=lm(RC,w,h);
+  const[lcx,lcy]=lm(LC,w,h);const[rcx,rcy]=lm(RC,w,h);
   const faceW=Math.hypot(rcx-lcx,rcy-lcy);
   const angle=Math.atan2(rcy-lcy,rcx-lcx);
   const cx=(lcx+rcx)/2,cy=fhy-faceW*0.05;
-  ctx.save();
-  ctx.translate(cx,cy);ctx.rotate(angle);
-  // Kafa derisi rengi - cilt tonu
-  ctx.beginPath();
-  ctx.ellipse(0,0,faceW*0.52,faceW*0.38*intensity,0,Math.PI,2*Math.PI);
+  ctx.save();ctx.translate(cx,cy);ctx.rotate(angle);
+  ctx.beginPath();ctx.ellipse(0,0,faceW*0.52,faceW*0.38*intensity,0,Math.PI,2*Math.PI);
   const skinG=ctx.createRadialGradient(0,-faceW*0.1,0,0,0,faceW*0.55);
   skinG.addColorStop(0,'#f5c99a');skinG.addColorStop(0.6,'#e8b88a');skinG.addColorStop(1,'#c49060');
   ctx.fillStyle=skinG;ctx.shadowColor='rgba(0,0,0,0.4)';ctx.shadowBlur=10;ctx.fill();
-  // Parlak yansıma
+  // highlight
   ctx.beginPath();ctx.ellipse(-faceW*0.05,-faceW*0.12,faceW*0.08,faceW*0.05,-0.4,0,2*Math.PI);
-  ctx.fillStyle='rgba(255,255,255,0.25)';ctx.shadowBlur=0;ctx.fill();
+  ctx.fillStyle='rgba(255,255,255,0.22)';ctx.shadowBlur=0;ctx.fill();
   ctx.restore();
 }
 
+// ── Deformasyon ──
 function drawFishEye(ctx,lms,video,w,h,intensity){
   const b=getFaceBounds(lms,w,h);if(!b||video.readyState<2)return;
-  // Balık gözü efekti - merkezden dışa doğru genişleme
-  const offCanvas=document.createElement('canvas');
-  offCanvas.width=w;offCanvas.height=h;
-  const offCtx=offCanvas.getContext('2d');
-  offCtx.drawImage(video,0,0,w,h);
-  const imgData=offCtx.getImageData(0,0,w,h);
-  const outData=ctx.createImageData(w,h);
-  const cx=b.cx,cy=b.cy,R=b.faceW*0.6;
-  const str=intensity*0.7;
-  for(let y=0;y<h;y++){
-    for(let x=0;x<w;x++){
-      const dx=(x-cx)/R,dy=(y-cy)/R;
-      const dist=Math.sqrt(dx*dx+dy*dy);
-      let sx=x,sy=y;
-      if(dist<1){
-        const factor=1-str*(1-dist*dist);
-        sx=cx+dx*R*factor;sy=cy+dy*R*factor;
-      }
-      sx=Math.max(0,Math.min(w-1,Math.round(sx)));
-      sy=Math.max(0,Math.min(h-1,Math.round(sy)));
-      const si=(sy*w+sx)*4,di=(y*w+x)*4;
-      outData.data[di]=imgData.data[si];outData.data[di+1]=imgData.data[si+1];
-      outData.data[di+2]=imgData.data[si+2];outData.data[di+3]=imgData.data[si+3];
-    }
-  }
-  ctx.putImageData(outData,0,0);
+  const offC=document.createElement('canvas');offC.width=w;offC.height=h;
+  const offX=offC.getContext('2d');offX.drawImage(video,0,0,w,h);
+  const src=offX.getImageData(0,0,w,h);
+  const dst=ctx.createImageData(w,h);
+  const cx=b.cx,cy=b.cy,R=b.faceW*0.6,str=intensity*0.65;
+  for(let y=0;y<h;y++){for(let x=0;x<w;x++){
+    const dx=(x-cx)/R,dy=(y-cy)/R,dist=Math.sqrt(dx*dx+dy*dy);
+    let sx=x,sy=y;
+    if(dist<1){const f=1-str*(1-dist*dist);sx=cx+dx*R*f;sy=cy+dy*R*f;}
+    sx=Math.max(0,Math.min(w-1,Math.round(sx)));sy=Math.max(0,Math.min(h-1,Math.round(sy)));
+    const si=(sy*w+sx)*4,di=(y*w+x)*4;
+    dst.data[di]=src.data[si];dst.data[di+1]=src.data[si+1];dst.data[di+2]=src.data[si+2];dst.data[di+3]=src.data[si+3];
+  }}
+  ctx.putImageData(dst,0,0);
 }
-
 function drawWideFace(ctx,lms,video,w,h,intensity){
   const b=getFaceBounds(lms,w,h);if(!b)return;
   ctx.save();
-  ctx.beginPath();
-  for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
-  ctx.closePath();ctx.fillStyle='#07070f';ctx.fill();
+  ctx.beginPath();for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.closePath();ctx.fillStyle='#07070f';ctx.fill();
   ctx.translate(b.cx,b.cy);ctx.rotate(b.angle);ctx.scale(1+0.5*intensity,1);ctx.rotate(-b.angle);ctx.translate(-b.cx,-b.cy);
-  if(video.readyState>=2){
-    ctx.beginPath();
-    for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
-    ctx.closePath();ctx.clip();ctx.drawImage(video,0,0,w,h);
-  }
+  if(video.readyState>=2){clipToFace(ctx,lms,w,h);ctx.drawImage(video,0,0,w,h);}
   ctx.restore();
 }
-
 function drawTallFace(ctx,lms,video,w,h,intensity){
   const b=getFaceBounds(lms,w,h);if(!b)return;
   ctx.save();
-  ctx.beginPath();
-  for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
-  ctx.closePath();ctx.fillStyle='#07070f';ctx.fill();
+  ctx.beginPath();for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.closePath();ctx.fillStyle='#07070f';ctx.fill();
   ctx.translate(b.cx,b.cy);ctx.rotate(b.angle);ctx.scale(1,1+0.5*intensity);ctx.rotate(-b.angle);ctx.translate(-b.cx,-b.cy);
-  if(video.readyState>=2){
-    ctx.beginPath();
-    for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
-    ctx.closePath();ctx.clip();ctx.drawImage(video,0,0,w,h);
-  }
+  if(video.readyState>=2){clipToFace(ctx,lms,w,h);ctx.drawImage(video,0,0,w,h);}
   ctx.restore();
 }
-
 function drawSqueeze(ctx,lms,video,w,h,intensity){
   const b=getFaceBounds(lms,w,h);if(!b)return;
   ctx.save();
-  ctx.beginPath();
-  for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
-  ctx.closePath();ctx.fillStyle='#07070f';ctx.fill();
+  ctx.beginPath();for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}ctx.closePath();ctx.fillStyle='#07070f';ctx.fill();
   ctx.translate(b.cx,b.cy);ctx.rotate(b.angle);ctx.scale(Math.max(0.35,1-0.4*intensity),1+0.3*intensity);ctx.rotate(-b.angle);ctx.translate(-b.cx,-b.cy);
-  if(video.readyState>=2){
-    ctx.beginPath();
-    for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
-    ctx.closePath();ctx.clip();ctx.drawImage(video,0,0,w,h);
-  }
+  if(video.readyState>=2){clipToFace(ctx,lms,w,h);ctx.drawImage(video,0,0,w,h);}
   ctx.restore();
 }
 
-function drawRainbow(ctx,lms,w,h,t){
-  const b=getFaceBounds(lms,w,h);if(!b)return;
-  const cx=b.cx,cy=b.cy;
-  const R=b.faceW*0.7;
-  const colors=['#FF0000','#FF7700','#FFFF00','#00FF00','#0000FF','#8B00FF'];
-  ctx.save();
-  ctx.globalAlpha=0.55;ctx.shadowBlur=0;
-  for(let i=0;i<colors.length;i++){
-    ctx.beginPath();
-    ctx.arc(cx,cy,R*(0.5+i*0.1),Math.PI+0.2,2*Math.PI-0.2);
-    ctx.strokeStyle=colors[i];ctx.lineWidth=10;ctx.globalAlpha=0.6;ctx.stroke();
+// ── Renk Efektleri (sadece yüzde) ──
+
+// Yardımcı: yüz bölgesinden piksel verisini al, işle, geri koy
+function applyFaceColorFilter(ctx,lms,video,w,h,filterFn){
+  if(video.readyState<2)return;
+  // offscreen'de video'yu çiz
+  const offC=document.createElement('canvas');offC.width=w;offC.height=h;
+  const offX=offC.getContext('2d');offX.drawImage(video,0,0,w,h);
+  const src=offX.getImageData(0,0,w,h);
+  const dst=new ImageData(new Uint8ClampedArray(src.data),w,h);
+  // yüz maskesi: hangi pikseller yüz içinde?
+  // yüz oval path'ini offscreen'de doldur
+  const maskC=document.createElement('canvas');maskC.width=w;maskC.height=h;
+  const maskX=maskC.getContext('2d');
+  maskX.beginPath();
+  for(let i=0;i<FACE_OVAL.length;i++){
+    const pt=lms[FACE_OVAL[i]];if(!pt)continue;
+    const x=pt.x*w,y=pt.y*h;
+    i===0?maskX.moveTo(x,y):maskX.lineTo(x,y);
   }
+  maskX.closePath();maskX.fillStyle='#fff';maskX.fill();
+  const maskData=maskX.getImageData(0,0,w,h).data;
+  for(let i=0;i<src.data.length;i+=4){
+    if(maskData[i+3]>0){
+      filterFn(dst.data,i,src.data);
+    }
+  }
+  // clipped draw back
+  ctx.save();
+  const tempC=document.createElement('canvas');tempC.width=w;tempC.height=h;
+  const tempX=tempC.getContext('2d');tempX.putImageData(dst,0,0);
+  clipToFace(ctx,lms,w,h);
+  ctx.drawImage(tempC,0,0);
   ctx.restore();
 }
 
 function drawThermal(ctx,lms,video,w,h){
-  const b=getFaceBounds(lms,w,h);if(!b||video.readyState<2)return;
-  const offCanvas=document.createElement('canvas');
-  offCanvas.width=w;offCanvas.height=h;
-  const offCtx=offCanvas.getContext('2d');
-  offCtx.drawImage(video,0,0,w,h);
-  const imgData=offCtx.getImageData(0,0,w,h);
-  const d=imgData.data;
-  for(let i=0;i<d.length;i+=4){
-    const g=(d[i]*0.299+d[i+1]*0.587+d[i+2]*0.114)/255;
+  applyFaceColorFilter(ctx,lms,video,w,h,(d,i,s)=>{
+    const g=(s[i]*0.299+s[i+1]*0.587+s[i+2]*0.114)/255;
     if(g<0.25){d[i]=0;d[i+1]=0;d[i+2]=Math.round(g*4*255);}
     else if(g<0.5){d[i]=0;d[i+1]=Math.round((g-0.25)*4*255);d[i+2]=255-Math.round((g-0.25)*4*255);}
     else if(g<0.75){d[i]=Math.round((g-0.5)*4*255);d[i+1]=255;d[i+2]=0;}
     else{d[i]=255;d[i+1]=255-Math.round((g-0.75)*4*255);d[i+2]=0;}
-  }
-  offCtx.putImageData(imgData,0,0);
-  // Sadece yüz bölgesine uygula
+  });
+}
+
+function drawXray(ctx,lms,video,w,h,intensity){
+  applyFaceColorFilter(ctx,lms,video,w,h,(d,i,s)=>{
+    const g=Math.round(s[i]*0.299+s[i+1]*0.587+s[i+2]*0.114);
+    const inv=255-g;
+    const v=Math.round(inv*0.6);
+    d[i]=v;d[i+1]=Math.round(v*1.1+20);d[i+2]=Math.round(v*1.3+30);
+  });
+}
+
+function drawNeonFace(ctx,lms,video,w,h,intensity){
+  applyFaceColorFilter(ctx,lms,video,w,h,(d,i,s)=>{
+    const g=(s[i]*0.299+s[i+1]*0.587+s[i+2]*0.114)/255;
+    // edge detect feel: dark areas go purple/pink, bright areas go cyan
+    const t=Math.pow(g,0.5);
+    d[i]=Math.round(180*t+50*(1-t));
+    d[i+1]=Math.round(20*t+0*(1-t));
+    d[i+2]=Math.round(255);
+  });
+  // add subtle neon glow overlay on face
   ctx.save();
-  ctx.beginPath();
-  for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
-  ctx.closePath();ctx.clip();ctx.drawImage(offCanvas,0,0,w,h);
+  clipToFace(ctx,lms,w,h);
+  ctx.globalCompositeOperation='screen';
+  ctx.globalAlpha=0.18*intensity;
+  ctx.fillStyle='#cc44ff';ctx.fillRect(0,0,w,h);
   ctx.restore();
+}
+
+function drawGold(ctx,lms,video,w,h,intensity){
+  applyFaceColorFilter(ctx,lms,video,w,h,(d,i,s)=>{
+    const g=(s[i]*0.299+s[i+1]*0.587+s[i+2]*0.114)/255;
+    d[i]=Math.min(255,Math.round(255*g*1.15));
+    d[i+1]=Math.min(255,Math.round(200*g*1.1));
+    d[i+2]=Math.round(30*g);
+  });
+  // metallic sheen
+  ctx.save();clipToFace(ctx,lms,w,h);
+  ctx.globalCompositeOperation='overlay';ctx.globalAlpha=0.25*intensity;
+  ctx.fillStyle='#ffd700';ctx.fillRect(0,0,w,h);
+  ctx.restore();
+}
+
+function drawComic(ctx,lms,video,w,h,intensity){
+  // posterize + edge outline
+  applyFaceColorFilter(ctx,lms,video,w,h,(d,i,s)=>{
+    const levels=4;
+    d[i]=Math.round(Math.round(s[i]/255*(levels-1))/(levels-1)*255);
+    d[i+1]=Math.round(Math.round(s[i+1]/255*(levels-1))/(levels-1)*255);
+    d[i+2]=Math.round(Math.round(s[i+2]/255*(levels-1))/(levels-1)*255);
+  });
+}
+
+function drawInverted(ctx,lms,video,w,h,intensity){
+  applyFaceColorFilter(ctx,lms,video,w,h,(d,i,s)=>{
+    d[i]=255-s[i];d[i+1]=255-s[i+1];d[i+2]=255-s[i+2];
+  });
+}
+
+function drawVintage(ctx,lms,video,w,h,intensity){
+  applyFaceColorFilter(ctx,lms,video,w,h,(d,i,s)=>{
+    // sepia
+    d[i]=Math.min(255,Math.round(s[i]*0.393+s[i+1]*0.769+s[i+2]*0.189));
+    d[i+1]=Math.min(255,Math.round(s[i]*0.349+s[i+1]*0.686+s[i+2]*0.168));
+    d[i+2]=Math.min(255,Math.round(s[i]*0.272+s[i+1]*0.534+s[i+2]*0.131));
+  });
+  // warm vignette tint
+  ctx.save();clipToFace(ctx,lms,w,h);
+  ctx.globalCompositeOperation='multiply';ctx.globalAlpha=0.3*intensity;
+  ctx.fillStyle='#c8854a';ctx.fillRect(0,0,w,h);
+  ctx.restore();
+}
+
+function drawLava(ctx,lms,video,w,h,intensity){
+  applyFaceColorFilter(ctx,lms,video,w,h,(d,i,s)=>{
+    const g=(s[i]*0.299+s[i+1]*0.587+s[i+2]*0.114)/255;
+    // lava: blacks→dark red, brights→yellow/white
+    if(g<0.33){
+      d[i]=Math.round(g*3*180);d[i+1]=0;d[i+2]=0;
+    } else if(g<0.66){
+      const t=(g-0.33)/0.33;
+      d[i]=255;d[i+1]=Math.round(t*150);d[i+2]=0;
+    } else {
+      const t=(g-0.66)/0.34;
+      d[i]=255;d[i+1]=Math.round(150+t*105);d[i+2]=Math.round(t*200);
+    }
+  });
 }
 
 function drawGhost(ctx,lms,video,w,h,intensity){
   const b=getFaceBounds(lms,w,h);if(!b)return;
-  ctx.save();
-  ctx.beginPath();
-  for(let i=0;i<FACE_OVAL.length;i++){const pt=lms[FACE_OVAL[i]];if(!pt)continue;const[x,y]=lm(pt,w,h);i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);}
-  ctx.closePath();ctx.clip();
-  if(video.readyState>=2){ctx.globalAlpha=0.15;ctx.drawImage(video,0,0,w,h);}
-  ctx.globalAlpha=0.7*intensity;
+  ctx.save();clipToFace(ctx,lms,w,h);
+  if(video.readyState>=2){ctx.globalAlpha=0.12;ctx.drawImage(video,0,0,w,h);}
+  ctx.globalAlpha=0.72*intensity;
   const ghostG=ctx.createRadialGradient(b.cx,b.cy,0,b.cx,b.cy,b.faceW*0.6);
-  ghostG.addColorStop(0,'rgba(200,220,255,0.9)');ghostG.addColorStop(0.5,'rgba(100,150,255,0.4)');ghostG.addColorStop(1,'rgba(50,80,200,0)');
+  ghostG.addColorStop(0,'rgba(200,220,255,0.95)');
+  ghostG.addColorStop(0.5,'rgba(100,150,255,0.4)');
+  ghostG.addColorStop(1,'rgba(50,80,200,0)');
   ctx.fillStyle=ghostG;ctx.shadowColor='rgba(100,150,255,0.8)';ctx.shadowBlur=25;
   ctx.fillRect(0,0,w,h);
   ctx.restore();
 }
 
-function drawGlitch(ctx,video,w,h){
+function drawGlitch(ctx,lms,video,w,h){
   if(video.readyState<2)return;
   glitchTimer++;
-  if(glitchTimer%3===0)glitchOffset=Math.floor(Math.random()*40)-20;
-  ctx.save();
+  if(glitchTimer%3===0)glitchOffset=Math.floor(Math.random()*36)-18;
+  ctx.save();clipToFace(ctx,lms,w,h);
   ctx.globalCompositeOperation='screen';
   ctx.globalAlpha=0.5;ctx.drawImage(video,glitchOffset,0,w,h);
   ctx.globalAlpha=0.4;ctx.drawImage(video,-glitchOffset/2,2,w,h);
   ctx.globalCompositeOperation='source-over';ctx.globalAlpha=1;
-  // Renkli çizgiler
-  const numLines=Math.floor(Math.random()*5)+2;
+  const numLines=Math.floor(Math.random()*4)+2;
+  const b=getFaceBounds(lms,w,h);
   for(let i=0;i<numLines;i++){
-    const y=Math.random()*h;const lineH=Math.random()*6+2;
+    const y=b?b.fhy+(Math.random()*(b.cny-b.fhy)):Math.random()*h;
     ctx.fillStyle=`rgba(${Math.random()>0.5?255:0},0,${Math.random()>0.5?255:0},0.6)`;
-    ctx.fillRect(0,y,w,lineH);
-  }
-  ctx.restore();
-}
-
-function drawHearts(ctx,lms,w,h,intensity){
-  const lIris=getIrisCenter(lms,EYES.left.iris,w,h);
-  const rIris=getIrisCenter(lms,EYES.right.iris,w,h);
-  const lR=getIrisRadius(lms,EYES.left.iris,w,h)*2.5*intensity;
-  const rR=getIrisRadius(lms,EYES.right.iris,w,h)*2.5*intensity;
-  function heartPath(ctx,cx,cy,size){
-    ctx.beginPath();
-    ctx.moveTo(cx,cy+size*0.5);
-    ctx.bezierCurveTo(cx-size,cy-size*0.5,cx-size*2,cy+size,cx,cy+size*1.5);
-    ctx.bezierCurveTo(cx+size*2,cy+size,cx+size,cy-size*0.5,cx,cy+size*0.5);
-    ctx.closePath();
-  }
-  ctx.save();
-  if(lIris){
-    const g=ctx.createRadialGradient(lIris[0],lIris[1],0,lIris[0],lIris[1],lR);
-    g.addColorStop(0,'#ff4488');g.addColorStop(1,'#cc0033');
-    ctx.fillStyle=g;ctx.shadowColor='#ff2266';ctx.shadowBlur=15;
-    ctx.save();ctx.translate(lIris[0],lIris[1]-lR*0.3);ctx.scale(lR/25,lR/25);
-    heartPath(ctx,0,0,12);ctx.fill();ctx.restore();
-  }
-  if(rIris){
-    const g=ctx.createRadialGradient(rIris[0],rIris[1],0,rIris[0],rIris[1],rR);
-    g.addColorStop(0,'#ff4488');g.addColorStop(1,'#cc0033');
-    ctx.fillStyle=g;ctx.shadowColor='#ff2266';ctx.shadowBlur=15;
-    ctx.save();ctx.translate(rIris[0],rIris[1]-rR*0.3);ctx.scale(rR/25,rR/25);
-    heartPath(ctx,0,0,12);ctx.fill();ctx.restore();
+    ctx.fillRect(0,y,w,4+Math.random()*5);
   }
   ctx.restore();
 }
@@ -707,150 +680,28 @@ function drawHearts(ctx,lms,w,h,intensity){
 function drawSunglasses(ctx,lms,w,h,intensity){
   const L=lms[33],R=lms[263];if(!L||!R)return;
   const[x1,y1]=lm(L,w,h),[x2,y2]=lm(R,w,h);
-  const cx=(x1+x2)/2,cy=(y1+y2)/2;
-  const d=Math.hypot(x2-x1,y2-y1);
-  const a=Math.atan2(y2-y1,x2-x1);
+  const cx=(x1+x2)/2,cy=(y1+y2)/2,d=Math.hypot(x2-x1,y2-y1),a=Math.atan2(y2-y1,x2-x1);
   ctx.save();ctx.translate(cx,cy);ctx.rotate(a);
   const lensW=d*0.5,lensH=d*0.32;
-  // Sol lens
-  const gL=ctx.createLinearGradient(-d*0.48,-lensH,d*0,-lensH*0.5);
+  const gL=ctx.createLinearGradient(-d*0.48,-lensH,0,-lensH*0.5);
   gL.addColorStop(0,'rgba(0,0,80,0.95)');gL.addColorStop(1,'rgba(30,30,120,0.8)');
-  ctx.beginPath();ctx.ellipse(-d*0.28,0,lensW*0.47,lensH,0,0,2*Math.PI);ctx.fillStyle=gL;ctx.fill();
-  ctx.strokeStyle='#888';ctx.lineWidth=3;ctx.shadowColor='rgba(0,0,0,0.8)';ctx.shadowBlur=10;ctx.stroke();
-  // Sağ lens
-  const gR=ctx.createLinearGradient(d*0,lensH,d*0.48,-lensH*0.5);
+  ctx.beginPath();ctx.ellipse(-d*0.28,0,lensW*0.47,lensH,0,0,2*Math.PI);
+  ctx.fillStyle=gL;ctx.fill();ctx.strokeStyle='#888';ctx.lineWidth=3;ctx.shadowColor='rgba(0,0,0,0.8)';ctx.shadowBlur=10;ctx.stroke();
+  const gR=ctx.createLinearGradient(0,lensH,d*0.48,-lensH*0.5);
   gR.addColorStop(0,'rgba(0,0,80,0.95)');gR.addColorStop(1,'rgba(30,30,120,0.8)');
-  ctx.beginPath();ctx.ellipse(d*0.28,0,lensW*0.47,lensH,0,0,2*Math.PI);ctx.fillStyle=gR;ctx.fill();ctx.stroke();
-  // Köprü
-  ctx.beginPath();ctx.moveTo(-d*0.28+lensW*0.47*0.9,0);ctx.lineTo(d*0.28-lensW*0.47*0.9,0);ctx.strokeStyle='#888';ctx.lineWidth=3;ctx.stroke();
-  // Yansıma
-  ctx.beginPath();ctx.ellipse(-d*0.35,-lensH*0.2,lensW*0.1,lensH*0.15,-0.3,0,2*Math.PI);ctx.fillStyle='rgba(255,255,255,0.25)';ctx.shadowBlur=0;ctx.fill();
-  ctx.beginPath();ctx.ellipse(d*0.21,-lensH*0.2,lensW*0.1,lensH*0.15,-0.3,0,2*Math.PI);ctx.fillStyle='rgba(255,255,255,0.25)';ctx.fill();
-  ctx.restore();
-}
-
-function drawBeard(ctx,lms,w,h,intensity){
-  const cn=lms[152],lj=lms[172],rj=lms[397],lm1=lms[148],rm1=lms[377];
-  if(!cn||!lj||!rj)return;
-  const[cnx,cny]=lm(cn,w,h);
-  const[ljx,ljy]=lm(lj,w,h);
-  const[rjx,rjy]=lm(rj,w,h);
-  const beardH=Math.hypot(rjx-ljx,rjy-ljy)*0.7*intensity;
-  ctx.save();
-  ctx.beginPath();
-  ctx.moveTo(ljx,ljy);
-  ctx.bezierCurveTo(ljx-10,ljy+beardH*0.7,cnx-5,cny+beardH,cnx,cny+beardH*1.1);
-  ctx.bezierCurveTo(cnx+5,cny+beardH,rjx+10,rjy+beardH*0.7,rjx,rjy);
-  ctx.closePath();
-  const bg=ctx.createLinearGradient(cnx,cny,cnx,cny+beardH);
-  bg.addColorStop(0,'rgba(40,25,15,0.9)');bg.addColorStop(1,'rgba(20,12,8,0.7)');
-  ctx.fillStyle=bg;ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=8;ctx.fill();
-  // Sakal kılları
-  ctx.strokeStyle='rgba(80,50,30,0.4)';ctx.lineWidth=1;ctx.shadowBlur=0;
-  for(let i=0;i<30;i++){
-    const tx=ljx+(rjx-ljx)*(i/29);const ty=ljy+(rjy-ljy)*(i/29);
-    ctx.beginPath();ctx.moveTo(tx,ty);ctx.lineTo(tx+(Math.random()-0.5)*6,ty+Math.random()*beardH*0.4);ctx.stroke();
-  }
-  ctx.restore();
-}
-
-function drawCrown(ctx,lms,w,h,intensity){
-  const FH=lms[10],LC=lms[234],RC=lms[454];if(!FH||!LC||!RC)return;
-  const[fhx,fhy]=lm(FH,w,h);
-  const[lcx,lcy]=lm(LC,w,h);
-  const[rcx,rcy]=lm(RC,w,h);
-  const faceW=Math.hypot(rcx-lcx,rcy-lcy);
-  const angle=Math.atan2(rcy-lcy,rcx-lcx);
-  const cx=(lcx+rcx)/2,cy=fhy-faceW*0.08;
-  const cw=faceW*1.05,ch=faceW*0.4*intensity;
-  ctx.save();ctx.translate(cx,cy);ctx.rotate(angle);
-  // Taç gövdesi
-  const cg=ctx.createLinearGradient(0,-ch,0,0);
-  cg.addColorStop(0,'#FFD700');cg.addColorStop(0.5,'#FFA500');cg.addColorStop(1,'#CC8800');
-  ctx.fillStyle=cg;ctx.shadowColor='rgba(255,180,0,0.6)';ctx.shadowBlur=15;
-  ctx.beginPath();
-  ctx.moveTo(-cw/2,0);
-  // 5 diş
-  const teeth=5;const tw=cw/teeth;
-  for(let i=0;i<teeth;i++){
-    const x=-cw/2+i*tw;const peak=i%2===0?-ch:(-ch*0.55);
-    ctx.lineTo(x,0);ctx.lineTo(x+tw/2,peak);ctx.lineTo(x+tw,0);
-  }
-  ctx.lineTo(cw/2,0);ctx.closePath();ctx.fill();
-  ctx.strokeStyle='rgba(200,140,0,0.8)';ctx.lineWidth=2;ctx.shadowBlur=0;ctx.stroke();
-  // Taşlar
-  const gemColors=['#FF3366','#3366FF','#33FF66','#FF6633','#9933FF'];
-  for(let i=0;i<5;i++){
-    const gx=-cw/2+i*tw+tw/2;
-    const gy=i%2===0?-ch+5:-ch*0.55+5;
-    ctx.beginPath();ctx.arc(gx,gy,tw*0.12,0,2*Math.PI);
-    ctx.fillStyle=gemColors[i];ctx.shadowColor=gemColors[i];ctx.shadowBlur=8;ctx.fill();
-  }
-  ctx.restore();
-}
-
-function drawMustache(ctx,lms,w,h,intensity){
-  const nose=lms[2],lmouth=lms[61],rmouth=lms[291];
-  if(!nose||!lmouth||!rmouth)return;
-  const[nx,ny]=lm(nose,w,h);
-  const[lmx,lmy]=lm(lmouth,w,h);
-  const[rmx,rmy]=lm(rmouth,w,h);
-  const mw=(rmx-lmx)*1.2*intensity;
-  const my=(lmy+rmy)/2-((rmy-ny)/2)*0.3;
-  const angle=Math.atan2(rmy-lmy,rmx-lmx);
-  ctx.save();ctx.translate((lmx+rmx)/2,my);ctx.rotate(angle);
-  const mg=ctx.createLinearGradient(0,-10,0,10);
-  mg.addColorStop(0,'rgba(20,10,5,0.95)');mg.addColorStop(1,'rgba(50,30,15,0.8)');
-  ctx.fillStyle=mg;ctx.shadowColor='rgba(0,0,0,0.5)';ctx.shadowBlur=5;
-  // Sol bıyık
-  ctx.beginPath();ctx.moveTo(0,-3);
-  ctx.bezierCurveTo(-mw*0.3,-15,-mw*0.5,-18,-mw*0.55,-10);
-  ctx.bezierCurveTo(-mw*0.45,2,-mw*0.2,5,0,3);
-  ctx.closePath();ctx.fill();
-  // Sağ bıyık
-  ctx.beginPath();ctx.moveTo(0,-3);
-  ctx.bezierCurveTo(mw*0.3,-15,mw*0.5,-18,mw*0.55,-10);
-  ctx.bezierCurveTo(mw*0.45,2,mw*0.2,5,0,3);
-  ctx.closePath();ctx.fill();
-  ctx.restore();
-}
-
-const fireParticles=[];
-function updateFireParticles(cx,cy,w,h){
-  for(let i=0;i<4;i++){
-    fireParticles.push({
-      x:cx+(Math.random()-0.5)*w*0.1,y:cy,
-      vx:(Math.random()-0.5)*3,vy:-(Math.random()*4+2),
-      life:1,maxLife:40+Math.random()*30,size:8+Math.random()*12
-    });
-  }
-  for(let i=fireParticles.length-1;i>=0;i--){
-    const p=fireParticles[i];
-    p.x+=p.vx;p.y+=p.vy;p.vx*=0.98;p.vy*=0.98;
-    p.life-=1/p.maxLife;
-    if(p.life<=0)fireParticles.splice(i,1);
-  }
-}
-function drawFire(ctx,lms,w,h,t){
-  const FH=lms[10];if(!FH)return;
-  const[fhx,fhy]=lm(FH,w,h);
-  updateFireParticles(fhx,fhy-30,w,h);
-  ctx.save();
-  for(const p of fireParticles){
-    const lifeRatio=p.life;
-    const alpha=lifeRatio;
-    const size=p.size*lifeRatio;
-    const col=lifeRatio>0.7?`rgba(255,${Math.round(100+155*lifeRatio)},0,${alpha})`:
-               lifeRatio>0.4?`rgba(255,${Math.round(50+100*(lifeRatio-0.4)/0.3)},0,${alpha})`:
-               `rgba(200,0,0,${alpha*0.5})`;
-    ctx.beginPath();ctx.arc(p.x,p.y,size,0,2*Math.PI);
-    ctx.fillStyle=col;ctx.shadowColor=col;ctx.shadowBlur=size*2;ctx.fill();
-  }
+  ctx.beginPath();ctx.ellipse(d*0.28,0,lensW*0.47,lensH,0,0,2*Math.PI);
+  ctx.fillStyle=gR;ctx.fill();ctx.stroke();
+  ctx.beginPath();ctx.moveTo(-d*0.28+lensW*0.47*0.9,0);ctx.lineTo(d*0.28-lensW*0.47*0.9,0);
+  ctx.strokeStyle='#888';ctx.lineWidth=3;ctx.stroke();
+  ctx.beginPath();ctx.ellipse(-d*0.35,-lensH*0.2,lensW*0.1,lensH*0.15,-0.3,0,2*Math.PI);
+  ctx.fillStyle='rgba(255,255,255,0.25)';ctx.shadowBlur=0;ctx.fill();
+  ctx.beginPath();ctx.ellipse(d*0.21,-lensH*0.2,lensW*0.1,lensH*0.15,-0.3,0,2*Math.PI);
+  ctx.fillStyle='rgba(255,255,255,0.25)';ctx.fill();
   ctx.restore();
 }
 
 // ══════════════════════════════════════════════
-//  STATE
+//  STATE & INIT
 // ══════════════════════════════════════════════
 const video=document.getElementById('webcam');
 const canvas=document.getElementById('output_canvas');
@@ -881,7 +732,6 @@ let frameCount=0;
 function resizeCanvas(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
 resizeCanvas();window.addEventListener('resize',resizeCanvas);
 
-// ── Panel Yönetimi ──
 function openSettings(){
   settingsPanel.classList.add('open');bd1.classList.add('active');
   iconM.style.display='none';iconC.style.display='block';
@@ -892,7 +742,6 @@ function closeSettings(){
   iconM.style.display='block';iconC.style.display='none';
 }
 function toggleSettings(){settingsPanel.classList.contains('open')?closeSettings():openSettings();}
-
 function toggleSnap(){
   if(snapPanel.classList.contains('open')){
     snapPanel.classList.remove('open');bd2.classList.remove('active');
@@ -908,16 +757,11 @@ snapBtn.addEventListener('click',toggleSnap);
 bd1.addEventListener('click',closeSettings);
 bd2.addEventListener('click',()=>{snapPanel.classList.remove('open');bd2.classList.remove('active');});
 
-// ── Snap butonları ──
 document.querySelectorAll('.snap-btn').forEach(btn=>{
   btn.addEventListener('click',()=>{
     const eff=btn.dataset.effect;
-    if(activeEffect===eff){
-      activeEffect=null;btn.classList.remove('active');
-    }else{
-      document.querySelectorAll('.snap-btn').forEach(b=>b.classList.remove('active'));
-      activeEffect=eff;btn.classList.add('active');
-    }
+    if(activeEffect===eff){activeEffect=null;btn.classList.remove('active');}
+    else{document.querySelectorAll('.snap-btn').forEach(b=>b.classList.remove('active'));activeEffect=eff;btn.classList.add('active');}
   });
 });
 
@@ -926,7 +770,6 @@ intensitySlider.addEventListener('input',e=>{
   intensityVal.textContent=effectIntensity.toFixed(1)+'×';
 });
 
-// ── Mode select ──
 modeSel.addEventListener('change',e=>{
   const v=e.target.value;
   if(v==='eyes'||v==='face_mask'){
@@ -935,7 +778,6 @@ modeSel.addEventListener('change',e=>{
     else{slider.value='2.3';pngScale=2.3;slVal.textContent='2.3×';}
   }else{upCont.classList.add('hidden');}
 });
-
 imgUp.addEventListener('change',e=>{
   const f=e.target.files[0];if(!f)return;
   fnEl.textContent=f.name;
@@ -943,15 +785,12 @@ imgUp.addEventListener('change',e=>{
   r.onload=ev=>{const i=new Image();i.onload=()=>{overlayImg=i;};i.src=ev.target.result;};
   r.readAsDataURL(f);
 });
-
 slider.addEventListener('input',e=>{pngScale=parseFloat(e.target.value);slVal.textContent=pngScale.toFixed(1)+'×';});
 
-// ── MediaPipe ──
 const holistic=new Holistic({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/holistic/${f}`});
 holistic.setOptions({modelComplexity:1,smoothLandmarks:true,refineFaceLandmarks:true,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
 holistic.onResults(r=>{faceLms=r.faceLandmarks||null;rHand=r.rightHandLandmarks||null;lHand=r.leftHandLandmarks||null;});
 
-// ── ANA DÖNGÜ ──
 function loop(){
   const W=canvas.width,H=canvas.height;
   frameCount++;
@@ -959,13 +798,22 @@ function loop(){
   if(video.readyState>=2)ctx2d.drawImage(video,0,0,W,H);
 
   const activeHand=rHand||lHand;
-  const t=frameCount*0.05;
-
-  // Snap efektleri (bazıları tüm frame'e uygulanır)
-  if(activeEffect==='glitch')drawGlitch(ctx2d,video,W,H);
-  if(activeEffect==='thermal'&&faceLms)drawThermal(ctx2d,faceLms,video,W,H);
 
   if(faceLms){
+    // Renk efektleri: video üzerine yüz clipli renk katmanı
+    switch(activeEffect){
+      case 'thermal':   drawThermal(ctx2d,faceLms,video,W,H);break;
+      case 'xray':      drawXray(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'neon_face': drawNeonFace(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'gold':      drawGold(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'comic':     drawComic(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'inverted':  drawInverted(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'vintage':   drawVintage(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'lava':      drawLava(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'ghost':     drawGhost(ctx2d,faceLms,video,W,H,effectIntensity);break;
+      case 'glitch':    drawGlitch(ctx2d,faceLms,video,W,H);break;
+    }
+
     if(cb('toggle_blur').checked)    drawFaceBlur(ctx2d,faceLms,video,W,H);
     if(cb('toggle_lips').checked)    drawLips(ctx2d,faceLms,W,H);
     if(cb('toggle_cheeks').checked)  drawCheeks(ctx2d,faceLms,W,H);
@@ -975,27 +823,20 @@ function loop(){
     if(cb('toggle_neck').checked)    drawNeck(ctx2d,faceLms,W,H);
 
     const mode=modeSel.value;
-    if(mode==='eyes'&&overlayImg)          drawEyeMask(ctx2d,faceLms,overlayImg,W,H,pngScale);
-    else if(mode==='face_mask'&&overlayImg)drawFaceMask(ctx2d,faceLms,overlayImg,W,H,pngScale);
+    if(mode==='eyes'&&overlayImg)           drawEyeMask(ctx2d,faceLms,overlayImg,W,H,pngScale);
+    else if(mode==='face_mask'&&overlayImg) drawFaceMask(ctx2d,faceLms,overlayImg,W,H,pngScale);
 
-    // Snap efektleri (yüz üzerine)
+    // Şekil/boyut efektleri
     switch(activeEffect){
       case 'big_head':   drawBigHead(ctx2d,faceLms,video,W,H,effectIntensity);break;
       case 'small_head': drawSmallHead(ctx2d,faceLms,video,W,H,effectIntensity);break;
-      case 'alien':      drawAlien(ctx2d,faceLms,W,H,effectIntensity);break;
+      case 'alien':      drawAlien(ctx2d,faceLms,video,W,H,effectIntensity);break;
       case 'bald':       drawBald(ctx2d,faceLms,video,W,H,effectIntensity);break;
       case 'fish_eye':   drawFishEye(ctx2d,faceLms,video,W,H,effectIntensity);break;
       case 'wide_face':  drawWideFace(ctx2d,faceLms,video,W,H,effectIntensity);break;
       case 'tall_face':  drawTallFace(ctx2d,faceLms,video,W,H,effectIntensity);break;
       case 'squeeze':    drawSqueeze(ctx2d,faceLms,video,W,H,effectIntensity);break;
-      case 'rainbow':    drawRainbow(ctx2d,faceLms,W,H,t);break;
-      case 'ghost':      drawGhost(ctx2d,faceLms,video,W,H,effectIntensity);break;
-      case 'hearts':     drawHearts(ctx2d,faceLms,W,H,effectIntensity);break;
       case 'sunglasses': drawSunglasses(ctx2d,faceLms,W,H,effectIntensity);break;
-      case 'beard':      drawBeard(ctx2d,faceLms,W,H,effectIntensity);break;
-      case 'crown':      drawCrown(ctx2d,faceLms,W,H,effectIntensity);break;
-      case 'mustache':   drawMustache(ctx2d,faceLms,W,H,effectIntensity);break;
-      case 'fire':       drawFire(ctx2d,faceLms,W,H,t);break;
     }
   }
 
